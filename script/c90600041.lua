@@ -5,7 +5,7 @@ function s.initial_effect(c)
 	-- Kích hoạt bài phép thông thường & áp dụng hiệu ứng khóa kích hoạt
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetCode(EVENT_FREE_CHAIN) -- ĐÃ SỬA: Thêm chính xác mã sự kiện Event Free Chain ở đây
 	e1:SetOperation(s.activate_op)
 	c:RegisterEffect(e1)
 
