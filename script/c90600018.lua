@@ -3,11 +3,11 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-    -- Link Summon: 2+ quái thú, bao gồm ít nhất 1 quái thú Link "Sky Striker"[cite: 31]
+    -- Link Summon: 2+ quái thú, bao gồm ít nhất 1 quái thú Link "Sky Striker"
     Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x115),2,99,s.spcheck)
     c:EnableReviveLimit()
 
-    -- Triệu hồi đặc biệt thay thế bằng cách gửi 1 Link "Sky Striker Ace" từ sân xuống Mộ khi có 10+ Phép trong Mộ[cite: 31]
+    -- Triệu hồi đặc biệt thay thế bằng cách gửi 1 Link "Sky Striker Ace" từ sân xuống Mộ khi có 10+ Phép trong Mộ
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_FIELD)
     e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
@@ -18,7 +18,7 @@ function s.initial_effect(c)
     e0:SetOperation(s.hspop)
     c:RegisterEffect(e0)
 
-    -- Không bị ảnh hưởng bởi hiệu ứng của các lá bài khác[cite: 31]
+    -- Không bị ảnh hưởng bởi hiệu ứng của các lá bài khác
     local e0_imm=Effect.CreateEffect(c)
     e0_imm:SetType(EFFECT_TYPE_SINGLE)
     e0_imm:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -27,7 +27,7 @@ function s.initial_effect(c)
     e0_imm:SetValue(s.immval)
     c:RegisterEffect(e0_imm)
 
-    -- HIỆU ỨNG 1 (Quick Effect): Trục xuất 1 Phép "Sky Striker" từ Deck hoặc Mộ; copy hiệu ứng[cite: 31]
+    -- HIỆU ỨNG 1 (Quick Effect): Trục xuất 1 Phép "Sky Striker" từ Deck hoặc Mộ; copy hiệu ứng
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetType(EFFECT_TYPE_QUICK_O)
@@ -38,7 +38,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.effop)
     c:RegisterEffect(e1)
 
-    -- HIỆU ỨNG 2: Nếu có 3+ Phép trong Mộ: Đào 5 lá từ trên Deck, thêm 1 lá vào tay, phần còn lại gửi xuống Mộ[cite: 31]
+    -- HIỆU ỨNG 2: Nếu có 3+ Phép trong Mộ: Đào 5 lá từ trên Deck, thêm 1 lá vào tay, phần còn lại gửi xuống Mộ
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_TOGRAVE)
@@ -50,7 +50,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.thop)
     c:RegisterEffect(e2)
 
-    -- HIỆU ỨNG 3 (Quick Effect): Gửi 1 lá "Sky Striker" từ sân xuống Mộ; trục xuất 20 lá, khóa kích hoạt hiệu ứng đối thủ[cite: 31]
+    -- HIỆU ỨNG 3 (Quick Effect): Gửi 1 lá "Sky Striker" từ sân xuống Mộ; trục xuất 20 lá, khóa kích hoạt hiệu ứng đối thủ
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_REMOVE+CATEGORY_TOGRAVE)
@@ -72,18 +72,18 @@ function s.spcheck(g,lc,tp)
     return g:IsExists(Card.IsSetCard,1,nil,0x115)
 end
 
--- Triệu hồi đặc biệt từ Extra Deck[cite: 31]
+-- Triệu hồi đặc biệt từ Extra Deck
 function s.hspfilter(c,tp)
     return c:IsSetCard(0x115) and c:IsType(TYPE_LINK) and c:IsFaceup() and c:IsAbleToGraveAsCost()
-        and Duel.GetLocationCountFromEx(tp,tp,c,TYPE_LINK)>0
+        and (Duel.GetLocationCountFromEx(tp,tp,c,TYPE_LINK)>0 or c:GetSequence()>=5)
 end
 function s.hspcon(e,c)
     if c==nil then return true end
     local tp=c:GetControler()
-    return Duel.GetMatchingGroupCount(Card.IsType,tp,LOCATION_GRAVE,0,nil,TYPE_SPELL)>=10
-        and Duel.IsExistingMatchingCard(s.hspfilter,tp,LOCATION_MZONE,0,1,nil,tp)
+    local ct=Duel.GetMatchingGroupCount(function(tc) return tc:IsType(TYPE_SPELL) end,tp,LOCATION_GRAVE,0,nil)
+    return ct>=10 and Duel.IsExistingMatchingCard(s.hspfilter,tp,LOCATION_MZONE,0,1,nil,tp)
 end
-function s.hsptg(e,tp,eg,ep,ev,re,r,rp,c)
+function s.hsptg(e,tp,eg,ep,ev,re,r,rp,chk,c)
     local g=Duel.SelectMatchingCard(tp,s.hspfilter,tp,LOCATION_MZONE,0,1,1,nil,tp)
     if #g>0 then
         g:KeepAlive()
@@ -100,12 +100,12 @@ function s.hspop(e,tp,eg,ep,ev,re,r,rp,c)
     end
 end
 
--- Miễn nhiễm[cite: 31]
+-- Miễn nhiễm
 function s.immval(e,te)
     return te:GetOwner()~=e:GetHandler()
 end
 
--- Hiệu ứng 1: Trục xuất 1 Phép Sky Striker để copy[cite: 31]
+-- Hiệu ứng 1: Trục xuất 1 Phép Sky Striker để copy
 function s.cfilter(c)
     return c:IsSetCard(0x115) and c:IsType(TYPE_SPELL) and c:IsAbleToRemoveAsCost()
 end
@@ -129,7 +129,7 @@ function s.effop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Hiệu ứng 2[cite: 31]
+-- Hiệu ứng 2
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetMatchingGroupCount(Card.IsType,tp,LOCATION_GRAVE,0,nil,TYPE_SPELL)>=3
 end
@@ -153,7 +153,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Hiệu ứng 3[cite: 31]
+-- Hiệu ứng 3
 function s.lockcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.CheckReleaseGroup(tp,Card.IsSetCard,1,nil,0x115) 
         and Duel.GetMatchingGroupCount(Card.IsAbleToRemove,tp,LOCATION_HAND+LOCATION_ONFIELD+LOCATION_GRAVE,0,nil)>=20 end
