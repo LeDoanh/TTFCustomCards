@@ -115,4 +115,3 @@ function s.lkop(e,tp,eg,ep,ev,re,r,rp)
         Duel.LinkSummon(tp,tc,nil)
     end
 end
-```[cite: 30]

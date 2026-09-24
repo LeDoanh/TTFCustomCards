@@ -75,7 +75,6 @@ end
 function s.spop1(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- Khóa triệu hồi: Chỉ được triệu hồi quái thú "Sky Striker Ace" trong suốt phần còn lại của ván đấu
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_FIELD)
 		e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
@@ -99,7 +98,7 @@ function s.splimit(e,c,sump,sumtype,sumpos,targetp,se)
 end
 
 --------------------------------------------------------------------------------
--- LOGIC HIỆU ỨNG 2 (Giới hạn chỉ gọi Xyz Rank 4 hoặc Link 1, 2, 4)
+-- LOGIC HIỆU ỨNG 2 (Xyz Rank 4 hoặc Link 1, 2, 4)
 --------------------------------------------------------------------------------
 function s.valid_extra_monster(c)
 	return c:IsSetCard(SET_SKY_STRIKER) and (
@@ -110,8 +109,7 @@ end
 
 function s.spchkfilter2(c,e,tp)
 	return s.valid_extra_monster(c) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and (c:IsType(TYPE_XYZ) and Duel.GetLocationCountFromEx(tp,tp,e:GetHandler(),c)>0
-			or c:IsType(TYPE_LINK) and Duel.GetLocationCountFromEx(tp,tp,e:GetHandler(),c)>0)
+		and Duel.GetLocationCountFromEx(tp,tp,e:GetHandler(),c)>0
 end
 function s.spfilter2(c,e,tp)
 	return s.valid_extra_monster(c) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
@@ -167,4 +165,3 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.ConfirmCards(1-tp,g)
 	end
 end
-```[cite: 31]
