@@ -9,7 +9,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate_op)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 1: Trong Standby Phase của mỗi lượt, gọi tên 1 Loại Quái Thú (Monster Type) để khóa hiệu ứng
+	-- Hiệu ứng 1: Trong Standby Phase của mỗi lượt, gọi tên 1 Loại Quái Thú cụ thể để khóa hiệu ứng
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -68,13 +68,22 @@ function s.aclimit(e,re,tp)
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: Khai báo Loại Quái Thú (Monster Type) trong Standby Phase
+-- HIỆU ỨNG 1: Khai báo Loại Quái Thú trong danh sách chỉ định trong Standby Phase
 --------------------------------------------------------------------------------
 function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
-	local rc=Duel.AnnounceRace(tp,1,RACE_ALL)
+	-- Gom nhóm chính xác các chủng tộc quái thú theo yêu cầu của bạn
+	local allowed_races = RACE_AQUA | RACE_BEAST | RACE_BEASTWARRIOR | RACE_CREATORGOD 
+		| RACE_CYBERSE | RACE_DINOSAUR | RACE_DIVINEBEAST | RACE_DRAGON | RACE_FAIRY 
+		| RACE_FIEND | RACE_FISH | RACE_ILLUSION | RACE_INSECT | RACE_MACHINE 
+		| RACE_PLANT | RACE_PSYCHIC | RACE_PYRO | RACE_REPTILE | RACE_ROCK 
+		| RACE_SEASERPENT | RACE_SPELLCASTER | RACE_THUNDER | RACE_WARRIOR 
+		| RACE_WINGEDBEAST | RACE_WYRM | RACE_ZOMBIE
+		
+	local rc=Duel.AnnounceRace(tp, 1, allowed_races)
 	e:SetLabel(rc)
 end
+
 function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	local rc=e:GetLabel()
 	local c=e:GetHandler()
@@ -84,8 +93,8 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetCode(EFFECT_CANNOT_ACTIVATE)
 	e1:SetTargetRange(1,1)
 	e1:SetValue(function(e,re,tp)
-		local rc=re:GetHandler()
-		return rc:IsMonster() and rc:IsRace(e:GetLabel())
+		local rc_card=re:GetHandler()
+		return rc_card:IsMonster() and rc_card:IsRace(e:GetLabel())
 	end)
 	e1:SetLabel(rc)
 	e1:SetReset(RESET_PHASE|PHASE_END)
