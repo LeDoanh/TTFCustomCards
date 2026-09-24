@@ -68,11 +68,11 @@ function s.aclimit(e,re,tp)
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: Khai báo Loại Quái Thú trong danh sách chỉ định trong Standby Phase
+-- HIỆU ỨNG 1: Khai báo Loại Quái Thú theo danh sách chỉ định trong Standby Phase
 --------------------------------------------------------------------------------
 function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
-	-- Gom nhóm chính xác các chủng tộc quái thú theo yêu cầu của bạn
+	-- Danh sách các Chủng Tộc (Race) được phép chọn theo yêu cầu
 	local allowed_races = RACE_AQUA | RACE_BEAST | RACE_BEASTWARRIOR | RACE_CREATORGOD 
 		| RACE_CYBERSE | RACE_DINOSAUR | RACE_DIVINEBEAST | RACE_DRAGON | RACE_FAIRY 
 		| RACE_FIEND | RACE_FISH | RACE_ILLUSION | RACE_INSECT | RACE_MACHINE 
@@ -92,7 +92,7 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetCode(EFFECT_CANNOT_ACTIVATE)
 	e1:SetTargetRange(1,1)
-	e1:SetValue(function(e,re,tp)
+	e1:SetValue(function(e,re,p)
 		local rc_card=re:GetHandler()
 		return rc_card:IsMonster() and rc_card:IsRace(e:GetLabel())
 	end)
