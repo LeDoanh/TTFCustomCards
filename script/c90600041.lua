@@ -20,7 +20,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.disop)
 	c:RegisterEffect(e2)
 
-	-- [3] Hiệu ứng trong Mộ (Main Phase): Bỏ bản thân từ Mộ -> Thêm 1 Phép "Sky Striker" từ Deck lên tay (1 lượt mỗi tên)
+	-- [3] Hiệu ứng trong Mộ (Main Phase): Bỏ bản thân từ Mộ -> Thêm 1 Phép "Sky Striker" từ Deck lên tay
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
 
-	-- [4] Hiệu ứng chiến đấu: Khi quái thú "Sky Striker" chiến đấu + >=3 Phép trong Mộ -> Phá hủy 1 thẻ bài đối thủ (1 lượt mỗi tên)
+	-- [4] Hiệu ứng chiến đấu: Khi quái thú "Sky Striker" chiến đấu + >=3 Phép trong Mộ -> Phá hủy 1 thẻ bài đối thủ
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,3))
 	e4:SetCategory(CATEGORY_DESTROY)
@@ -67,11 +67,10 @@ function s.aclimit(e,re,tp)
 end
 
 --------------------------------------------------------------------------------
--- [2] XỬ LÝ STANDBY PHASE (Chọn giới hạn Chủng Tộc quái thú)
+-- [2] XỬ LÝ STANDBY PHASE (Khóa chủng tộc đã chọn)
 --------------------------------------------------------------------------------
 function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
-	-- Danh sách các chủng tộc theo đúng yêu cầu
 	local allowed_races = RACE_AQUA | RACE_BEAST | RACE_BEASTWARRIOR | RACE_CREATORGOD 
 		| RACE_CYBERSE | RACE_DINOSAUR | RACE_DIVINEBEAST | RACE_DRAGON | RACE_FAIRY 
 		| RACE_FIEND | RACE_FISH | RACE_ILLUSION | RACE_INSECT | RACE_MACHINE 
@@ -91,13 +90,16 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetCode(EFFECT_CANNOT_ACTIVATE)
 	e1:SetTargetRange(1,1)
-	e1:SetValue(function(eff,rebind,target_player)
-		local rc_card=rebind:GetHandler()
-		return rc_card:IsMonster() and rc_card:IsRace(eff:GetLabel())
-	end)
+	-- Sửa lại hàm Value để tránh lỗi trả về nil ở tham số cấu hình
+	e1:SetValue(s.edislimit)
 	e1:SetLabel(rc)
 	e1:SetReset(RESET_PHASE|PHASE_END)
 	Duel.RegisterEffect(e1,tp)
+end
+
+function s.edislimit(e,re,tp)
+	local rc=re:GetHandler()
+	return rc:IsMonster() and rc:IsRace(e:GetLabel())
 end
 
 --------------------------------------------------------------------------------
