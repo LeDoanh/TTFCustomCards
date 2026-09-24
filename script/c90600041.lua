@@ -2,14 +2,14 @@
 -- ID: 90600041
 local s,id=GetID()
 function s.initial_effect(c)
-	-- [1] KHI KÍCH HOẠT: Giới hạn suốt phần còn lại của Duel chỉ được kích hoạt hiệu ứng quái thú "Sky Striker"
+	-- [1] Kích hoạt: Khóa hiệu ứng, chỉ được kích hoạt hiệu ứng quái thú "Sky Striker" trong phần còn lại của Duel
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetOperation(s.activate_op)
 	c:RegisterEffect(e1)
 
-	-- [2] HIỆU ỨNG TRÊN SÂN (Standby Phase): Khai báo 1 Loại Quái Thú để khóa hiệu ứng trong lượt
+	-- [2] Hiệu ứng Standby Phase: Khai báo 1 Loại Quái Thú để khóa hiệu ứng trong lượt
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -20,7 +20,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.disop)
 	c:RegisterEffect(e2)
 
-	-- [3] HIỆU ỨNG TỪ MỘ (Main Phase): Loại bỏ từ Mộ -> Thêm 1 Phép "Sky Striker" từ Deck lên tay
+	-- [3] Hiệu ứng trong Mộ (Main Phase): Bỏ bản thân từ Mộ -> Thêm 1 Phép "Sky Striker" từ Deck lên tay (1 lượt mỗi tên)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
 
-	-- [4] HIỆU ỨNG CHIẾN ĐẤU: Khi quái thú "Sky Striker" chiến đấu + >=3 Phép trong Mộ -> Phá hủy 1 thẻ bài đối thủ
+	-- [4] Hiệu ứng chiến đấu: Khi quái thú "Sky Striker" chiến đấu + >=3 Phép trong Mộ -> Phá hủy 1 thẻ bài đối thủ (1 lượt mỗi tên)
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,3))
 	e4:SetCategory(CATEGORY_DESTROY)
@@ -67,11 +67,11 @@ function s.aclimit(e,re,tp)
 end
 
 --------------------------------------------------------------------------------
--- [2] XỬ LÝ STANDBY PHASE (Chọn giới hạn Chủng Tộc theo danh sách của bạn)
+-- [2] XỬ LÝ STANDBY PHASE (Chọn giới hạn Chủng Tộc quái thú)
 --------------------------------------------------------------------------------
 function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
-	-- Danh sách chính xác các chủng tộc theo yêu cầu của bạn
+	-- Danh sách các chủng tộc theo đúng yêu cầu
 	local allowed_races = RACE_AQUA | RACE_BEAST | RACE_BEASTWARRIOR | RACE_CREATORGOD 
 		| RACE_CYBERSE | RACE_DINOSAUR | RACE_DIVINEBEAST | RACE_DRAGON | RACE_FAIRY 
 		| RACE_FIEND | RACE_FISH | RACE_ILLUSION | RACE_INSECT | RACE_MACHINE 
@@ -101,7 +101,7 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- [3] XỬ LÝ HIỆU ỨNG TỪ MỘ (Thêm Phép "Sky Striker" lên tay)
+-- [3] XỬ LÝ TỪ MỘ (Thêm Phép "Sky Striker" từ Deck lên tay)
 --------------------------------------------------------------------------------
 function s.thfilter(c)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToHand()
@@ -120,7 +120,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- [4] XỬ LÝ HIỆU ỨNG CHIẾN ĐẤU (Phá hủy 1 thẻ bài khi >=3 Phép trong Mộ)
+-- [4] XỬ LÝ KHI CHIẾN ĐẤU (Phá hủy 1 thẻ bài đối thủ nếu có >=3 Phép trong Mộ)
 --------------------------------------------------------------------------------
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetBattleMonster(tp)
