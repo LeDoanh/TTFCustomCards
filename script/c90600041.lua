@@ -2,11 +2,11 @@
 -- ID: 90600041
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Kích hoạt bài phép thông thường & khóa hiệu ứng quái thú ngoài "Sky Striker" suốt ván
+	-- Kích hoạt bài phép thông thường & áp dụng hiệu ứng khóa kích hoạt
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetOperation(s.activation_limit)
+	e1:SetOperation(s.activate_op)
 	c:RegisterEffect(e1)
 
 	-- Hiệu ứng 1: Trong Standby Phase của mỗi lượt, gọi tên 1 Loại Quái Thú (Monster Type) để khóa hiệu ứng
@@ -51,7 +51,7 @@ s.listed_series={SET_SKY_STRIKER}
 --------------------------------------------------------------------------------
 -- KHI KÍCH HOẠT: Giới hạn chỉ được kích hoạt hiệu ứng quái thú "Sky Striker"
 --------------------------------------------------------------------------------
-function s.activation_limit(e,tp,eg,ep,ev,re,r,rp)
+function s.activate_op(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
