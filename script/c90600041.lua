@@ -2,10 +2,10 @@
 -- ID: 90600041
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Kích hoạt bài phép thông thường & áp dụng hiệu ứng khóa kích hoạt
+	-- Kích hoạt bài phép thông thường
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN) -- ĐÃ SỬA: Thêm chính xác mã sự kiện Event Free Chain ở đây
+	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetOperation(s.activate_op)
 	c:RegisterEffect(e1)
 
@@ -83,14 +83,13 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetCode(EFFECT_CANNOT_ACTIVATE)
 	e1:SetTargetRange(1,1)
-	e1:SetValue(s.aclimit2)
+	e1:SetValue(function(e,re,tp)
+		local rc=re:GetHandler()
+		return rc:IsMonster() and rc:IsRace(e:GetLabel())
+	end)
 	e1:SetLabel(rc)
 	e1:SetReset(RESET_PHASE|PHASE_END)
 	Duel.RegisterEffect(e1,tp)
-end
-function s.aclimit2(e,re,tp)
-	local rc=re:GetHandler()
-	return rc:IsMonster() and rc:IsRace(e:GetLabel())
 end
 
 --------------------------------------------------------------------------------
