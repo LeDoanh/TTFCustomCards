@@ -21,7 +21,7 @@ function s.initial_effect(c)
 	e0:SetValue(aux.fuslimit)
 	c:RegisterEffect(e0)
 
-	-- Hiệu ứng 1: Chọn 1 quái thú trên sân -> Lá này tăng ATK bằng ATK của quái đó
+	-- Hiệu ứng 1: Chọn 1 quái thú ngửa mặt trên sân -> Lá này tăng ATK bằng ATK của quái đó
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_ATKCHANGE)
@@ -63,11 +63,17 @@ end
 --------------------------------------------------------------------------------
 -- 1. GAIN ATK LOGIC
 --------------------------------------------------------------------------------
+-- Hàm lọc quái thú ngửa mặt có ATK > 0
+function s.atkfilter(c)
+	return c:IsFaceup() and c:GetAttack() > 0
+end
+
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.atkfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.atkfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	local g=Duel.SelectTarget(tp,s.atkfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,g,1,0,0)
 end
 
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
