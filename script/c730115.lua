@@ -112,19 +112,33 @@ function s.lock_deck(c,tp)
 
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetProperty(EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE)
 	e3:SetCode(EFFECT_CANNOT_TO_GRAVE)
 	e3:SetTargetRange(LOCATION_DECK,0)
-	e3:SetTarget(function(e,tc) return not tc:IsType(TYPE_SPELL) end)
+	e3:SetTarget(function(e,tc)
+		return tc:IsLocation(LOCATION_DECK) and tc:IsControler(e:GetHandlerPlayer()) and not tc:IsType(TYPE_SPELL)
+	end)
 	e3:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e3,tp)
 
-	local e4=e3:Clone()
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e4:SetCode(EFFECT_CANNOT_REMOVE)
+	e4:SetTargetRange(1,0)
+	e4:SetTarget(function(e,tc,p)
+		return tc:IsLocation(LOCATION_DECK) and tc:IsControler(e:GetHandlerPlayer()) and not tc:IsType(TYPE_SPELL)
+	end)
+	e4:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e4,tp)
 
-	local e5=e3:Clone()
+	local e5=Effect.CreateEffect(c)
+	e5:SetType(EFFECT_TYPE_FIELD)
 	e5:SetCode(EFFECT_CANNOT_TO_HAND)
+	e5:SetTargetRange(LOCATION_DECK,0)
+	e5:SetTarget(function(e,tc)
+		return tc:IsLocation(LOCATION_DECK) and tc:IsControler(e:GetHandlerPlayer()) and not tc:IsType(TYPE_SPELL)
+	end)
+	e5:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e5,tp)
 end
 
@@ -145,7 +159,7 @@ function s.thfilter(c)
 end
 
 function s.selftg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetFieldGroupCount(tp,0,LOCATION_EXTRA)>0 end
+	if chk==0 then return Duel.GetFieldGroupCount(tp,0,LOCATION_EXTRA)>0 and Duel.IsPlayerCanRemove(tp) end
 	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,1-tp,LOCATION_EXTRA)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
@@ -157,6 +171,7 @@ function s.selfop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local sg=g:FilterSelect(tp,Card.IsAbleToRemove,1,1,nil,tp,POS_FACEDOWN)
 	if #sg>0 and Duel.Remove(sg,POS_FACEDOWN,REASON_EFFECT)>0 then
+		Duel.ShuffleExtra(1-tp)
 		local thg=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_DECK,0,nil)
 		if #thg>0 then
 			Duel.BreakEffect()
@@ -165,6 +180,8 @@ function s.selfop(e,tp,eg,ep,ev,re,r,rp)
 			Duel.SendtoHand(hg,nil,REASON_EFFECT)
 			Duel.ConfirmCards(1-tp,hg)
 		end
+	else
+		Duel.ShuffleExtra(1-tp)
 	end
 end
 
