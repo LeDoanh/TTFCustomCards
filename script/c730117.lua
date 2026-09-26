@@ -1,8 +1,29 @@
---Nightbloom Memories
+-- ============================================================
+-- Card Name: Nightbloom Memories
+-- Passcode : 730117
+-- Type     : Spell / Normal
+-- Archetype: Nightbloom (0xb24), Flower Spirit (0x702)
+-- ============================================================
+-- Effect 0: Always treated as a "Flower Spirit" card.
+-- Effect 1: Cannot be Set. You can activate this card from your
+--           hand during your opponent's turn.
+-- Effect 2: If this card is activated during your turn: Reveal
+--           the top 10 cards of your Deck, add 2 of them to your
+--           hand, then shuffle this card into the Deck. Also, you
+--           cannot draw cards until the end of this turn.
+-- Effect 3: If this card is activated as Chain Link 2 or higher
+--           during your opponent's turn: Negate the effects of all
+--           other cards in this Chain.
+-- Oath    : You can only activate 1 "Nightbloom Memories" per turn.
+-- Restriction: You cannot use cards in your Deck, except Spell Cards.
+-- ============================================================
+
 local s,id=GetID()
 
 function s.initial_effect(c)
-	--Always treated as a "Flower Spirit" card
+	-- ============================================================
+	-- Effect 0 — Always treated as a "Flower Spirit" card
+	-- ============================================================
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -10,38 +31,63 @@ function s.initial_effect(c)
 	e0:SetValue(0x702)
 	c:RegisterEffect(e0)
 
-	--Cannot be Set
+	-- ============================================================
+	-- Effect 1 — Cannot be Set
+	-- ============================================================
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
-	--Your turn: Normal Spell activation
+	-- ============================================================
+	-- Effect 1b — Activate from hand during opponent's turn
+	-- ============================================================
 	local e2=Effect.CreateEffect(c)
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_TODECK)
-	e2:SetType(EFFECT_TYPE_ACTIVATE)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
-	e2:SetCondition(s.selfcon)
-	e2:SetCost(s.cost)
-	e2:SetTarget(s.selftg)
-	e2:SetOperation(s.selfop)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e2:SetCode(EFFECT_BECOME_QUICK)
+	e2:SetRange(LOCATION_HAND)
 	c:RegisterEffect(e2)
 
-	--Opponent's turn: Quick Effect from hand (Chain Link 2 or higher)
 	local e3=Effect.CreateEffect(c)
-	e3:SetCategory(CATEGORY_DISABLE)
-	e3:SetType(EFFECT_TYPE_QUICK_O)
-	e3:SetCode(EVENT_CHAINING)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e3:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
 	e3:SetRange(LOCATION_HAND)
-	e3:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
-	e3:SetCondition(s.oppcon)
-	e3:SetCost(s.oppcost)
-	e3:SetTarget(s.opptg)
-	e3:SetOperation(s.oppop)
 	c:RegisterEffect(e3)
+
+	-- ============================================================
+	-- Effect 2 — Your turn: Normal Spell activation
+	-- ============================================================
+	local e4=Effect.CreateEffect(c)
+	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_TODECK)
+	e4:SetType(EFFECT_TYPE_ACTIVATE)
+	e4:SetCode(EVENT_FREE_CHAIN)
+	e4:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
+	e4:SetCondition(s.selfcon)
+	e4:SetCost(s.cost)
+	e4:SetTarget(s.selftg)
+	e4:SetOperation(s.selfop)
+	c:RegisterEffect(e4)
+
+	-- ============================================================
+	-- Effect 3 — Opponent's turn: Activation as Chain Link 2 or higher
+	-- ============================================================
+	local e5=Effect.CreateEffect(c)
+	e5:SetCategory(CATEGORY_DISABLE)
+	e5:SetType(EFFECT_TYPE_ACTIVATE)
+	e5:SetCode(EVENT_CHAINING)
+	e5:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
+	e5:SetCondition(s.oppcon)
+	e5:SetCost(s.cost)
+	e5:SetTarget(s.opptg)
+	e5:SetOperation(s.oppop)
+	c:RegisterEffect(e5)
 end
 
+-- ============================================================
+-- Deck Restriction: Lock Deck cards except Spell Cards
+-- ============================================================
 function s.lock_deck(c,tp)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
@@ -82,13 +128,16 @@ function s.lock_deck(c,tp)
 	Duel.RegisterEffect(e5,tp)
 end
 
-function s.selfcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==tp
-end
-
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
 	s.lock_deck(e:GetHandler(),tp)
+end
+
+-- ============================================================
+-- Effect 2: Your Turn Logic
+-- ============================================================
+function s.selfcon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==tp
 end
 
 function s.selftg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -124,15 +173,11 @@ function s.selfop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e1,tp)
 end
 
+-- ============================================================
+-- Effect 3: Opponent's Turn Logic
+-- ============================================================
 function s.oppcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp and Duel.GetCurrentChain()>=1
-end
-
-function s.oppcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToGraveAsCost() end
-	Duel.SendtoGrave(c,REASON_COST)
-	s.lock_deck(c,tp)
 end
 
 function s.opptg(e,tp,eg,ep,ev,re,r,rp,chk)

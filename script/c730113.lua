@@ -1,8 +1,31 @@
---Into The Nightbloom
+-- ============================================================
+-- Card Name: Into The Nightbloom
+-- Passcode : 730113
+-- Type     : Spell / Normal
+-- Archetype: Nightbloom (0xb24), Flower Spirit (0x702)
+-- ============================================================
+-- Effect 0: Always treated as a "Flower Spirit" card.
+-- Effect 1: Cannot be Set. You can activate this card from your
+--           hand during your opponent's turn.
+-- Effect 2: If this card is activated during your turn: Draw up to
+--           5 cards, then banish the top 5 cards of your Deck
+--           face-down for each card you drew.
+-- Effect 3: If this card is activated during your opponent's turn:
+--           Choose any number of monsters on the field; shuffle them
+--           into the Deck or Extra Deck, then your opponent can banish
+--           the top 3 cards of their Deck face-down for each monster
+--           chosen by this effect to negate this effect. Your opponent
+--           cannot activate cards or effects in response to this effect.
+-- Oath    : You can only activate 1 "Nightbloom - Into The Nightbloom" per turn.
+-- Restriction: You cannot use cards in your Deck, except Spell Cards.
+-- ============================================================
+
 local s,id=GetID()
 
 function s.initial_effect(c)
-	--Luôn được coi là card "Flower Spirit"
+	-- ============================================================
+	-- Effect 0 — Always treated as a "Flower Spirit" card
+	-- ============================================================
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -10,46 +33,66 @@ function s.initial_effect(c)
 	e0:SetValue(0x702)
 	c:RegisterEffect(e0)
 
-	--Không thể Úp (Set)
+	-- ============================================================
+	-- Effect 1 — Cannot be Set
+	-- ============================================================
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
-	-----------------------------------------------------------------------
-	-- 1. KÍCH HOẠT TRONG LƯỢT CỦA MÌNH: Normal Spell thuần túy (Spell Speed 1)
-	-----------------------------------------------------------------------
+	-- ============================================================
+	-- Effect 1b — Activate from hand during opponent's turn
+	-- ============================================================
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_DRAW+CATEGORY_REMOVE)
-	e2:SetType(EFFECT_TYPE_ACTIVATE)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
-	e2:SetCondition(s.selfcon)
-	e2:SetCost(s.cost)
-	e2:SetTarget(s.selftg)
-	e2:SetOperation(s.selfop)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e2:SetCode(EFFECT_BECOME_QUICK)
+	e2:SetRange(LOCATION_HAND)
 	c:RegisterEffect(e2)
 
-	-----------------------------------------------------------------------
-	-- 2. KÍCH HOẠT TRONG LƯỢT ĐỐI THỦ: Quick Effect từ trên tay (Spell Speed 2)
-	-----------------------------------------------------------------------
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_TODECK+CATEGORY_REMOVE)
-	e3:SetType(EFFECT_TYPE_QUICK_O)
-	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e3:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
 	e3:SetRange(LOCATION_HAND)
-	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-	e3:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
-	e3:SetCondition(s.oppcon)
-	e3:SetCost(s.oppcost)
-	e3:SetTarget(s.opptg)
-	e3:SetOperation(s.oppop)
 	c:RegisterEffect(e3)
+
+	-- ============================================================
+	-- Effect 2 — Your turn: Normal Spell activation
+	-- ============================================================
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,0))
+	e4:SetCategory(CATEGORY_DRAW+CATEGORY_REMOVE)
+	e4:SetType(EFFECT_TYPE_ACTIVATE)
+	e4:SetCode(EVENT_FREE_CHAIN)
+	e4:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
+	e4:SetCondition(s.selfcon)
+	e4:SetCost(s.cost)
+	e4:SetTarget(s.selftg)
+	e4:SetOperation(s.selfop)
+	c:RegisterEffect(e4)
+
+	-- ============================================================
+	-- Effect 3 — Opponent's turn: Activation from hand onto field
+	-- ============================================================
+	local e5=Effect.CreateEffect(c)
+	e5:SetDescription(aux.Stringid(id,1))
+	e5:SetCategory(CATEGORY_TODECK+CATEGORY_REMOVE)
+	e5:SetType(EFFECT_TYPE_ACTIVATE)
+	e5:SetCode(EVENT_FREE_CHAIN)
+	e5:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
+	e5:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
+	e5:SetCondition(s.oppcon)
+	e5:SetCost(s.cost)
+	e5:SetTarget(s.opptg)
+	e5:SetOperation(s.oppop)
+	c:RegisterEffect(e5)
 end
 
---Cost khóa Deck chung
+-- ============================================================
+-- Deck Restriction: Lock Deck cards except Spell Cards
+-- ============================================================
 function s.lock_deck(c,tp)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
@@ -94,16 +137,16 @@ function s.lock_deck(c,tp)
 	Duel.RegisterEffect(e5,tp)
 end
 
------------------------------------------------------------------------
--- LOGIC LƯỢT CỦA MÌNH
------------------------------------------------------------------------
-function s.selfcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==tp
-end
-
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
 	s.lock_deck(e:GetHandler(),tp)
+end
+
+-- ============================================================
+-- Effect 2: Your Turn Logic
+-- ============================================================
+function s.selfcon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==tp
 end
 
 function s.selftg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -136,26 +179,18 @@ function s.selfop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
------------------------------------------------------------------------
--- LOGIC LƯỢT ĐỐI THỦ (QUICK EFFECT TỪ TAY)
------------------------------------------------------------------------
+-- ============================================================
+-- Effect 3: Opponent's Turn Logic
+-- ============================================================
 function s.oppcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp
-end
-
-function s.oppcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToGraveAsCost() end
-	--Gửi lá bài từ tay xuống Mộ như chi phí kích hoạt
-	Duel.SendtoGrave(c,REASON_COST)
-	s.lock_deck(c,tp)
 end
 
 function s.opptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.IsExistingMatchingCard(Card.IsAbleToDeck,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil)
 	end
-	--Đối thủ không thể phản ứng lại hiệu ứng này
+	--Opponent cannot activate cards or effects in response to this effect
 	Duel.SetChainLimit(function(e,ep,tp) return ep==tp end)
 	local g=Duel.GetMatchingGroup(Card.IsAbleToDeck,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
@@ -171,7 +206,7 @@ function s.oppop(e,tp,eg,ep,ev,re,r,rp)
 		local req_banish=ct*3
 		local deck_ct=Duel.GetFieldGroupCount(1-tp,LOCATION_DECK,0)
 		
-		--Đối thủ có quyền banish úp top Deck để triệt tiêu hiệu ứng
+		--Opponent can banish top of Deck face-down to negate this effect
 		if deck_ct>=req_banish and Duel.SelectYesNo(1-tp,aux.Stringid(id,2)) then
 			local rg=Duel.GetDecktopGroup(1-tp,req_banish)
 			Duel.DisableShuffleCheck()

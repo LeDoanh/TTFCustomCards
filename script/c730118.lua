@@ -1,8 +1,30 @@
---Nightbloom - Heaven of Stars
+-- ============================================================
+-- Card Name: Nightbloom - Heaven of Stars
+-- Passcode : 730118
+-- Type     : Spell / Field
+-- Archetype: Nightbloom (0xb24), Flower Spirit (0x702)
+-- ============================================================
+-- Effect 0: Always treated as a "Flower Spirit" card.
+-- Effect 1: Cannot be Set.
+-- Effect 2: If this card is activated: You can add 1 "Flower Spirit"
+--           or "Nightbloom" Spell from your Deck to your hand.
+-- Effect 3: During your opponent's turn: You can send this card
+--           from your hand to the GY, then banish 1 Field Spell on
+--           the field until the end of this turn.
+-- Effect 4: If this card is destroyed on the field and sent to the
+--           GY by an opponent's card effect: Neither player can
+--           activate Trap Cards until the end of the next turn.
+-- Oath    : You can only activate 1 "Nightbloom - Heaven of Stars" per turn.
+-- Restriction: You cannot use cards in your Deck, except Spell Cards,
+--           during the turn you activate this card.
+-- ============================================================
+
 local s,id=GetID()
 
 function s.initial_effect(c)
-	--Always treated as a "Flower Spirit" card
+	-- ============================================================
+	-- Effect 0 — Always treated as a "Flower Spirit" card
+	-- ============================================================
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -10,13 +32,17 @@ function s.initial_effect(c)
 	e0:SetValue(0x702)
 	c:RegisterEffect(e0)
 
-	--Cannot be Set
+	-- ============================================================
+	-- Effect 1 — Cannot be Set
+	-- ============================================================
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
-	--Activate (Field Spell)
+	-- ============================================================
+	-- Effect 2 — Field Spell activation: Search archetype Spell
+	-- ============================================================
 	local e2=Effect.CreateEffect(c)
 	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e2:SetType(EFFECT_TYPE_ACTIVATE)
@@ -26,7 +52,9 @@ function s.initial_effect(c)
 	e2:SetOperation(s.activate)
 	c:RegisterEffect(e2)
 
-	--Quick hand effect during opponent's turn
+	-- ============================================================
+	-- Effect 3 — Quick hand effect during opponent's turn: Banish Field Spell
+	-- ============================================================
 	local e3=Effect.CreateEffect(c)
 	e3:SetCategory(CATEGORY_REMOVE)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
@@ -39,7 +67,9 @@ function s.initial_effect(c)
 	e3:SetOperation(s.rmop)
 	c:RegisterEffect(e3)
 
-	--Destroyed by opponent's card effect
+	-- ============================================================
+	-- Effect 4 — Destroyed by opponent's card effect: Lock Trap cards
+	-- ============================================================
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
 	e4:SetCode(EVENT_TO_GRAVE)
@@ -48,6 +78,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
+-- ============================================================
+-- Deck Restriction: Lock Deck cards except Spell Cards
+-- ============================================================
 function s.lock_deck(c,tp)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
@@ -93,6 +126,9 @@ function s.actcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	s.lock_deck(e:GetHandler(),tp)
 end
 
+-- ============================================================
+-- Effect 2: Search Archetype Spell
+-- ============================================================
 function s.thfilter(c)
 	return (c:IsSetCard(0x702) or c:IsSetCard(0xb24)) and c:IsType(TYPE_SPELL) and not c:IsCode(id) and c:IsAbleToHand()
 end
@@ -107,6 +143,9 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+-- ============================================================
+-- Effect 3: Hand Quick Effect Logic
+-- ============================================================
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp
 end
@@ -147,6 +186,9 @@ function s.retop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.ReturnToField(tc,tc:GetPreviousPosition(),0x20)
 end
 
+-- ============================================================
+-- Effect 4: Destroyed By Opponent's Effect Logic
+-- ============================================================
 function s.trapcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_FZONE) and c:IsReason(REASON_DESTROY)
