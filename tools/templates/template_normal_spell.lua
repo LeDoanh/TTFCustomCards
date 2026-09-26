@@ -6,6 +6,7 @@
 -- ============================================================
 -- Effect 1: Add 1 "<<ARCHETYPE_NAME>>" card from your Deck
 --           to your hand.
+--           You can only activate 1 "<<CARD_NAME>>" per turn.
 -- ============================================================
 
 local s,id=GetID()
@@ -46,7 +47,6 @@ end
 -- Effect 1: Operation — Select 1 card from Deck, add to hand
 -- ============================================================
 function s.op_search(e,tp,eg,ep,ev,re,r,rp)
-    if not e:GetHandler():IsRelateToEffect(e) then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
     local g=Duel.SelectMatchingCard(tp,s.filter_search,tp,LOCATION_DECK,0,1,1,nil)
     if #g>0 then

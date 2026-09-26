@@ -106,14 +106,31 @@ function s.initial_effect(c)
 	e8:SetRange(LOCATION_SZONE)
 	e8:SetOperation(s.sdop)
 	c:RegisterEffect(e8)
+
+	-- Check for cards Set by Veidos
+	aux.GlobalCheck(s,function()
+		local ge=Effect.CreateEffect(c)
+		ge:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ge:SetCode(EVENT_SSET)
+		ge:SetOperation(s.checkop)
+		Duel.RegisterEffect(ge,0)
+	end)
 end
 
-s.listed_names={CARD_OBSIDIM_ASHENED_CITY,78783557,id}
+s.listed_names={CARD_OBSIDIM_ASHENED_CITY,CARD_VEIDOS_ERUPTION_DRAGON}
 s.listed_series={SET_ASHENED,SET_VEIDOS}
 
 function s.actcon(e)
-	local re=e:GetHandler():GetReasonEffect()
-	return re and re:GetHandler():IsCode(78783557)
+	return e:GetHandler():HasFlagEffect(id)
+end
+
+function s.checkop(e,tp,eg,ep,ev,re,r,rp)
+	if not re then return end
+	local rc=re:GetHandler()
+	if not (rc and (rc:IsCode(CARD_VEIDOS_ERUPTION_DRAGON) or rc:IsOriginalCodeRule(CARD_VEIDOS_ERUPTION_DRAGON))) then return end
+	for ec in eg:Iter() do
+		ec:RegisterFlagEffect(id,RESETS_STANDARD_PHASE_END,0,1)
+	end
 end
 
 function s.spfilter(c,e,tp)

@@ -10,7 +10,8 @@
 -- ============================================================
 -- Effect 1: Target 1 Dragon/Machine in either GY; Special Summon
 --           this card from hand/GY and equip that monster to it.
--- Effect 2: (Quick Effect): Send 1 Monster Card in S/T Zone to GY;
+-- Effect 2: Gains ATK equal to the equipped Monster Card's ATK.
+-- Effect 3: (Quick Effect): Send 1 Monster Card in S/T Zone to GY;
 --           add to hand or Special Summon 1 "Cyberdark" monster from Deck.
 -- You can only use each effect of "Advance Cyberdark Edge" once per turn.
 -- ============================================================
@@ -39,19 +40,28 @@ function s.initial_effect(c)
 	e1b:SetCondition(s.quickcon)
 	c:RegisterEffect(e1b)
 
-	-- Send Monster Card in S/T zone to GY; Add or Special Summon 1 "Cyberdark" monster from Deck
+	-- Gains ATK equal to the equipped Monster Card's ATK
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_SPECIAL_SUMMON)
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetCode(EVENT_FREE_CHAIN)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e2:SetCode(EFFECT_UPDATE_ATTACK)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END)
-	e2:SetCountLimit(1,{id,1})
-	e2:SetCost(s.thcost)
-	e2:SetTarget(s.thtg)
-	e2:SetOperation(s.thop)
+	e2:SetValue(s.atkval)
 	c:RegisterEffect(e2)
+
+	-- Send Monster Card in S/T zone to GY; Add or Special Summon 1 "Cyberdark" monster from Deck
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_SPECIAL_SUMMON)
+	e3:SetType(EFFECT_TYPE_QUICK_O)
+	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END)
+	e3:SetCountLimit(1,{id,1})
+	e3:SetCost(s.thcost)
+	e3:SetTarget(s.thtg)
+	e3:SetOperation(s.thop)
+	c:RegisterEffect(e3)
 end
 
 s.listed_series={SET_CYBERDARK}
@@ -94,8 +104,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.equipop(c,e,tp,tc)
-	local atk=tc:GetTextAttack()
-	if atk<0 then atk=0 end
 	if not Duel.Equip(tp,tc,c,true) then return end
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
@@ -105,17 +113,24 @@ function s.equipop(c,e,tp,tc)
 	e1:SetValue(s.eqlimit)
 	e1:SetLabelObject(c)
 	tc:RegisterEffect(e1)
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_EQUIP)
-	e2:SetProperty(EFFECT_FLAG_OWNER_RELATE+EFFECT_FLAG_IGNORE_IMMUNE)
-	e2:SetCode(EFFECT_UPDATE_ATTACK)
-	e2:SetReset(RESET_EVENT|RESETS_STANDARD)
-	e2:SetValue(atk)
-	tc:RegisterEffect(e2)
 end
 
 function s.eqlimit(e,c)
 	return c==e:GetLabelObject()
+end
+
+function s.atkfilter(c)
+	return c:IsFaceup() and c:IsMonsterCard()
+end
+
+function s.atkval(e,c)
+	local g=c:GetEquipGroup():Filter(s.atkfilter,nil)
+	local val=0
+	for tc in aux.Next(g) do
+		local atk=tc:GetTextAttack()
+		if atk>0 then val=val+atk end
+	end
+	return val
 end
 
 function s.cfilter(c)

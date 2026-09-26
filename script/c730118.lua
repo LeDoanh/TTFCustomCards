@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	--Cannot be Set
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_CANNOT_SET)
+	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
 	--Activate (Field Spell)
@@ -142,7 +142,9 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.ReturnToField(e:GetLabelObject())
+	local tc=e:GetLabelObject()
+	--Zone 0x20 (sequence 5) returns the Field Spell to the Field Zone instead of a Spell & Trap Zone
+	Duel.ReturnToField(tc,tc:GetPreviousPosition(),0x20)
 end
 
 function s.trapcon(e,tp,eg,ep,ev,re,r,rp)

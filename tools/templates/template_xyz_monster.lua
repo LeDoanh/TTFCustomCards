@@ -2,10 +2,6 @@
 -- Card Name: <<CARD_NAME>>
 -- Passcode : <<PASSCODE>>
 -- Type     : Monster / Xyz / Effect
--- Attribute: <<DARK|LIGHT|EARTH|WATER|FIRE|WIND|DIVINE>>
--- Rank     : <<RANK>>
--- ATK/DEF  : <<ATK>> / <<DEF>>
--- Race     : <<RACE>>
 -- Archetype: <<ARCHETYPE_NAME>> (0x<<SETCODE>>)
 -- Materials: <<MATERIAL_COUNT>> Level <<RANK>> monsters
 -- ============================================================
@@ -31,7 +27,7 @@ function s.initial_effect(c)
     e1:SetCategory(CATEGORY_DESTROY)
     e1:SetType(EFFECT_TYPE_IGNITION)                       -- Can only be activated during your Main Phase
     e1:SetRange(LOCATION_MZONE)                            -- Must be face-up on the Monster Zone
-    e1:SetCountLimit(1,id)                                 -- Hard once per turn
+    e1:SetCountLimit(1)                                    -- Soft once per turn (each copy once)
     e1:SetCost(s.cost_detach)                              -- Cost: detach 1 Xyz material
     e1:SetTarget(s.tg_destroy)
     e1:SetOperation(s.op_destroy)

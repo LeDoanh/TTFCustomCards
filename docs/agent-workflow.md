@@ -8,12 +8,12 @@ Với từng effect, ghi ngắn trong mô tả công việc/PR: vị trí kích 
 
 ## 2. Official reference
 
-Tìm official card cùng cơ chế và đọc trực tiếp từ bản cài game:
+Tìm official card cùng cơ chế và đọc trực tiếp từ bản cài game. Chưa biết tên card thì tìm theo effect text bằng `--text`: mỗi tham số là một cụm phải có trong text, text ngắn đứng trước:
 
 ```powershell
+python tools/read_official.py --text "If this card is Normal or Special Summoned" "Spell/Trap from your Deck"
 python tools/read_official.py <official-ID>
-python tools/read_official.py "<Card Name>"
-python tools/read_official.py --search "<từ khóa>"
+python tools/read_official.py --search "<tên card>"
 ```
 
 Tool hiển thị effect/stats và lưu script mẫu vào `docs/official-reference/c<ID>.lua` (thư mục chỉ có trên máy dev, không commit); `--view` in script ra màn hình, `--fetch` tải script từ GitHub khi bản cài không có. Ghi ID và hàm/effect dùng làm mẫu, phần nào khác yêu cầu. Đọc constants/helper mà script đó gọi nếu cần. Không coi template hay custom cũ là bằng chứng engine hỗ trợ.
@@ -23,18 +23,20 @@ Tool hiển thị effect/stats và lưu script mẫu vào `docs/official-referen
 Archetype chưa có trong `feature_list.json` thì đăng ký trước, đừng sửa tay file đó:
 
 ```powershell
-python tools/manage_harness.py archetype add <Name> <setcode>
-python tools/manage_harness.py archetype add <Name> <setcode> --range <start>-<end>
+python tools/manage_harness.py archetype add <Name>             # fan-made mới: tool chọn setcode trống
+python tools/manage_harness.py archetype add <Name> <setcode>   # archetype official hoặc setcode đã chốt
 ```
 
-Range mặc định suy từ setcode theo quy ước sẵn có (`setcode * 100000 + 1` đến `+ 99999`, vd `0x16e` -> `36600001-36699999`); lệnh từ chối khi trùng tên, trùng setcode hoặc chồng range. `--range` dùng khi setcode lớn làm passcode vượt 9 chữ số. Archetype fan-made còn cần hằng `SET_*` và `!setname` (`docs/agent-rules.md` §2.2).
+Tool đối chiếu setcode với `archetype_setcode_constants.lua` của bản cài game: setcode official chỉ được đăng ký; setcode fan-made được kiểm tra trùng (12 bit thấp với official, tên khác trong `script/constants.lua`/`strings.conf`) rồi tự ghi `SET_*` và `!setname` vào hai file đó. Output ghi rõ hằng `SET_*` dùng trong Lua. Range mặc định là `setcode * 100000 + 1` đến `+ 99999` (vd `0x16e` -> `36600001-36699999`); lệnh từ chối khi trùng tên, trùng setcode hoặc chồng range. `--range <start>-<end>` dùng khi passcode vượt 9 chữ số.
 
 Tạo card theo một trong hai cách:
 
-- Có ảnh card: đặt ảnh tên `p_<tên card>.<ext>` vào `docs/queues/<Archetype>/`, chạy `python tools/manage_harness.py scan` để cấp passcode chưa dùng và ghi card `pending`, rồi `start` với passcode đó.
+- Có ảnh card: đặt ảnh tên `p_<tên card>.<ext>` vào `docs/queues/<Archetype>/` (clone mới chưa có thư mục này, tự tạo), chạy `python tools/manage_harness.py scan` để cấp passcode chưa dùng và ghi card `pending`, rồi `start` với passcode đó.
 - Tạo trực tiếp: `python tools/manage_harness.py start <ID> "<name>" <template>` với passcode trong range của archetype. Danh sách template: `python tools/manage_harness.py start --help`.
 
-`start` tạo JSON/Lua từ template và cập nhật queue; không ghi đè file cũ. Điền hết placeholder, stats và effect text; xem `docs/agent-rules.md`. Extra Deck effect monster phải có bit Effect trong `type`. `aux.Stringid(id,N)` phải có phần tử `strings[N]` (chỉ số bắt đầu từ 0).
+`start` tạo JSON/Lua từ template và cập nhật queue; không ghi đè file cũ. Nó tự thay `<<CARD_NAME>>`, `<<PASSCODE>>`, `<<SETCODE>>`, `<<ARCHETYPE_NAME>>`; mọi `<<...>>` còn lại (`<<ATK_VALUE>>`, `<<RANK>>`...) phải thay tay, `verify` chặn nếu sót. Stats chỉ điền trong JSON; `type`, `race`, `attribute`, `category` ghi bằng tên (`docs/agent-rules.md` §3.2). Extra Deck effect monster phải có bit Effect trong `type`. `aux.Stringid(id,N)` phải có phần tử `strings[N]` (chỉ số bắt đầu từ 0).
+
+Template chỉ là khung: xóa block effect mẫu không dùng cùng các hàm filter/target/operation của nó. Thêm effect thì copy từ `Effect.CreateEffect` đến `c:RegisterEffect(eN)` kèm các hàm liên quan, đổi tên biến và chỉ số `Stringid`. Đổi loại effect thì lấy official card cùng cơ chế làm mẫu, không tự sửa template.
 
 ## 4. Kiểm tra tĩnh
 
@@ -57,18 +59,11 @@ CDB trong game trùng tên file với CDB của repo bị bỏ qua — đó là 
 
 ### Danh sách tham chiếu EDOPro
 
-Lua trả về `nil` cho tên không tồn tại thay vì báo lỗi, nên hằng số gõ sai (`CATEGORY_SET`) hay hàm bịa (`Card.IsAbleToHandOrExtra`) vẫn qua được bước kiểm tra cú pháp rồi mới crash trong duel. `validate_scripts.ps1` chặn bằng hai danh sách trắng sinh từ bản cài game:
+Lua trả về `nil` cho tên không tồn tại, nên hằng số gõ sai hay hàm bịa vẫn qua được parser rồi mới crash trong duel. `validate_scripts.ps1` chặn bằng hai danh sách trắng sinh từ bản cài game: `tools/edopro_constants.txt` (hằng số) và `tools/edopro_apis.txt` (`Namespace.Function`, gồm cả method `c:Method()`). Sai tên thì sửa theo tên thật; hằng số riêng của card khai báo `local` trong file, hằng số dùng chung thêm vào `script/constants.lua` kèm `Duel.LoadScript("constants.lua")`.
 
-| File | Nội dung |
-| :--- | :--- |
-| `tools/edopro_constants.txt` | hằng số ALL_CAPS do thư viện script EDOPro định nghĩa |
-| `tools/edopro_apis.txt` | cặp `Namespace.Function` có thật, gồm cả hàm chỉ gọi dạng `c:Method()` |
+Không sửa tay hai file này. Sau mỗi lần cập nhật EDOPro, chạy `python tools/sync_edopro_refs.py --check` (exit 1 khi lệch); lệch thì chạy lại không có `--check` rồi commit hai file. Thêm `--game-dir "<đường dẫn>"` nếu game không ở `$EDOPRO_DIR`/`F:/Game/ProjectIgnis`.
 
-Sai tên thì sửa theo tên thật; hằng số riêng của card thì khai báo `local` ngay trong file, hằng số dùng chung thì thêm vào `script/constants.lua` kèm `Duel.LoadScript("constants.lua")`.
-
-Sau mỗi lần cập nhật EDOPro, chạy `python tools/sync_edopro_refs.py --check` (exit 1 khi lệch); lệch thì chạy lại không có `--check` để sinh lại và commit hai file. Thêm `--game-dir "<đường dẫn>"` nếu game không ở `$EDOPRO_DIR`/`F:/Game/ProjectIgnis`. Đừng sửa tay hai file này. Chỉ hằng số khai báo trong file thư viện của game mới vào danh sách; biến `local` trong script từng card không tính, vì gộp vào sẽ khiến một tên gõ sai lọt qua chỉ nhờ trùng biến cục bộ của card khác.
-
-EDOPro chạy Lua 5.4.7 (chuỗi trong `ocgcore.dll`), còn `validate_scripts.ps1` gọi `lua` trong PATH. Nếu script qua được parser máy mình mà EDOPro từ chối, kiểm tra lệch phiên bản trước tiên.
+EDOPro chạy Lua 5.4.7, còn validator gọi `lua` trong PATH: script qua parser máy mình mà EDOPro từ chối thì kiểm tra lệch phiên bản trước tiên.
 
 ## 5. Artwork và dọn queue
 
@@ -87,4 +82,4 @@ Sau khi các bước tĩnh đạt, `verify` copy ảnh queue thành `pics/<ID>.j
 
 ## 6. Trước khi commit
 
-Review `git diff --check` và `git diff --stat`. Đọc `docs/database-workflow.md` trước khi commit thay đổi CDB. Quy tắc nhánh, commit và PR nằm trong `AGENTS.md`.
+Review `git diff --check` và `git diff --stat`. Thay đổi CDB theo `docs/agent-rules.md` §3.4. Quy tắc nhánh, commit và PR nằm trong `AGENTS.md`.

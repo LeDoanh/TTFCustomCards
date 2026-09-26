@@ -2,14 +2,11 @@
 -- Card Name: <<CARD_NAME>>
 -- Passcode : <<PASSCODE>>
 -- Type     : Monster / Synchro / Effect
--- Attribute: <<DARK|LIGHT|EARTH|WATER|FIRE|WIND|DIVINE>>
--- Level    : <<LEVEL>>
--- ATK/DEF  : <<ATK>> / <<DEF>>
--- Race     : <<RACE>>
 -- Archetype: <<ARCHETYPE_NAME>> (0x<<SETCODE>>)
 -- ============================================================
 -- Effect 1: If this card is Synchro Summoned: You can Special
 --           Summon 1 Level 4 or lower monster from your GY.
+--           You can only use this effect of "<<CARD_NAME>>" once per turn.
 -- Effect 2: All "<<ARCHETYPE_NAME>>" monsters you control
 --           (except this card) gain <<ATK_VALUE>> ATK.
 -- ============================================================
@@ -32,6 +29,7 @@ function s.initial_effect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
     e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)   -- Optional Trigger, responds to this card
+    e1:SetProperty(EFFECT_FLAG_DELAY)                      -- "If" trigger: cannot miss the timing
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)                     -- Fires on any Special Summon
     e1:SetCountLimit(1,id)                                 -- Hard once per turn
     e1:SetCondition(s.spcon)                               -- Only when Synchro Summoned

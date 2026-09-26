@@ -2,7 +2,7 @@
 -- Card Name: Reploid Headquarter
 -- Passcode : 11223309
 -- Type     : Spell / Field
--- Archetype: Maverick Analyzer (0x305), Maverick Boost (0x304)
+-- Archetype: None
 -- ============================================================
 -- Effect 1: "Maverick Hunter" monsters you control cannot be
 --           banished by your opponent's card effects.
@@ -74,7 +74,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
-s.listed_series={SET_MAVERICK_HUNTER,SET_MAVERICK_ANALYZER,SET_MAVERICK_BOOST}
+s.listed_series={SET_MAVERICK_HUNTER,SET_MAVERICK_ANALYZER}
 
 -- ============================================================
 -- Activation Logic

@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	--Cannot be Set
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_CANNOT_SET)
+	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
 	--Your turn: Normal Spell activation

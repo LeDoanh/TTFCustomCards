@@ -2,14 +2,11 @@
 -- Card Name: <<CARD_NAME>>
 -- Passcode : <<PASSCODE>>
 -- Type     : Monster / Effect
--- Attribute: <<DARK|LIGHT|EARTH|WATER|FIRE|WIND|DIVINE>>
--- Level    : <<LEVEL>>
--- ATK/DEF  : <<ATK>> / <<DEF>>
--- Race     : <<RACE>>
 -- Archetype: <<ARCHETYPE_NAME>> (0x<<SETCODE>>)
 -- ============================================================
 -- Effect 1: If this card is Normal Summoned: You can add
 --           1 "<<ARCHETYPE_NAME>>" card from your Deck to your hand.
+--           You can only use this effect of "<<CARD_NAME>>" once per turn.
 -- Effect 2: Once per turn: You can target 1 face-up card
 --           on the field; destroy it.
 -- ============================================================
@@ -24,6 +21,7 @@ function s.initial_effect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SEARCH+CATEGORY_TOHAND)
     e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)  -- Optional Trigger, responds to this card only
+    e1:SetProperty(EFFECT_FLAG_DELAY)                      -- "If" trigger: cannot miss the timing
     e1:SetCode(EVENT_SUMMON_SUCCESS)                       -- Fires when this card is Normal Summoned
     e1:SetCountLimit(1,id)                                 -- Hard once per turn (shared among copies)
     e1:SetTarget(s.tg_search)
@@ -38,7 +36,7 @@ function s.initial_effect(c)
     e2:SetCategory(CATEGORY_DESTROY)
     e2:SetType(EFFECT_TYPE_IGNITION)                       -- Can only be activated during your Main Phase
     e2:SetRange(LOCATION_MZONE)                            -- Must be face-up on the Monster Zone
-    e2:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)          -- Hard once per turn (1 use total across all copies)
+    e2:SetCountLimit(1)                                    -- Soft once per turn (each copy once)
     e2:SetTarget(s.tg_destroy)
     e2:SetOperation(s.op_destroy)
     c:RegisterEffect(e2)
@@ -65,7 +63,6 @@ end
 -- Effect 1: Operation — Select 1 card from Deck, add to hand
 -- ============================================================
 function s.op_search(e,tp,eg,ep,ev,re,r,rp)
-    if not e:GetHandler():IsRelateToEffect(e) then return end -- Guard: card must still be on field
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
     local g=Duel.SelectMatchingCard(tp,s.filter_search,tp,LOCATION_DECK,0,1,1,nil)
     if #g>0 then

@@ -44,7 +44,7 @@ strings.conf     — Tên archetype hiển thị trong game
 
 ## Dữ liệu và công cụ
 
-Đọc [workflow CDB](docs/database-workflow.md) trước khi cập nhật database. Chỉ copy CDB, `script/`, `pics/` và `strings.conf` vào game; không copy `tools/` hay queue. Thay đồng bộ các file CDB sau lần cập nhật database để tránh trùng ID với bản cũ.
+Đọc [quy tắc CDB](docs/agent-rules.md#3-cdb) trước khi cập nhật database. Chỉ copy CDB, `script/`, `pics/` và `strings.conf` vào game; không copy `tools/` hay queue. Thay đồng bộ các file CDB sau lần cập nhật database để tránh trùng ID với bản cũ.
 
 ---
 

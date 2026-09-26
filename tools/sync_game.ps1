@@ -57,6 +57,13 @@ if ($CardId -ne "") {
             Write-Warning "Khong tim thay script/c$code.lua!"
         }
     }
+    # Card goi Duel.LoadScript("constants.lua") doc ban trong game; SET_ moi chua sync
+    # thi doc ra nil va crash, nen luon copy kem file nay.
+    $constants = Join-Path $root "script\constants.lua"
+    if (Test-Path $constants) {
+        Copy-Item $constants $scriptDest -Force
+        Write-Host "  -> Da copy constants.lua" -ForegroundColor Green
+    }
 } else {
     Copy-Item (Join-Path $root "script\*.lua") $scriptDest -Force
     Write-Host "  -> Da dong bo toan bo scripts sang game." -ForegroundColor Green
@@ -119,6 +126,8 @@ if ($CardId -ne "") {
         $deckLines = @("#created by TTF Test Tool", "#main") + $main + @("#extra") + $extra + @("!side")
         [System.IO.File]::WriteAllLines($deckPath, $deckLines)
         Write-Host "  -> Da tao deck test: test_$CardId.ydk" -ForegroundColor Green
+    } else {
+        Write-Warning "Khong thay thu muc '$deckDir' - bo qua tao deck test."
     }
 }
 

@@ -2,16 +2,12 @@
 -- Card Name: <<CARD_NAME>>
 -- Passcode : <<PASSCODE>>
 -- Type     : Monster / Link / Effect
--- Attribute: <<DARK|LIGHT|EARTH|WATER|FIRE|WIND|DIVINE>>
--- Link     : <<LINK_COUNT>>
--- ATK       : <<ATK>>
--- Race     : <<RACE>>
 -- Archetype: <<ARCHETYPE_NAME>> (0x<<SETCODE>>)
 -- Materials: <<MIN_MATERIAL>>+ "<<ARCHETYPE_NAME>>" monsters
--- Markers  : <<LINK_MARKERS>>
 -- ============================================================
 -- Effect 1: If this card is Link Summoned: You can add 1
 --           "<<ARCHETYPE_NAME>>" card from your Deck to your hand.
+--           You can only use this effect of "<<CARD_NAME>>" once per turn.
 -- Effect 2: Monsters this card points to gain <<ATK_VALUE>> ATK.
 -- ============================================================
 
@@ -32,6 +28,7 @@ function s.initial_effect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SEARCH+CATEGORY_TOHAND)
     e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)   -- Optional Trigger, responds to this card
+    e1:SetProperty(EFFECT_FLAG_DELAY)                      -- "If" trigger: cannot miss the timing
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)                     -- Fires on any Special Summon
     e1:SetCountLimit(1,id)                                 -- Hard once per turn
     e1:SetCondition(s.spcon)                               -- Only when Link Summoned
@@ -80,7 +77,6 @@ end
 -- Effect 1: Operation — Select 1 card from Deck, add to hand
 -- ============================================================
 function s.op_search(e,tp,eg,ep,ev,re,r,rp)
-    if not e:GetHandler():IsRelateToEffect(e) then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
     local g=Duel.SelectMatchingCard(tp,s.filter_search,tp,LOCATION_DECK,0,1,1,nil)
     if #g>0 then

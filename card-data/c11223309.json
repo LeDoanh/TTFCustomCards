@@ -3,10 +3,7 @@
   "ot": 32,
   "alias": 0,
   "type": 524290,
-  "setcodes": [
-    773,
-    772
-  ],
+  "setcode": 0,
   "atk": 0,
   "def": 0,
   "level": 0,

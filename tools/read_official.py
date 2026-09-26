@@ -12,6 +12,7 @@ Cách dùng:
   python tools/read_official.py "Ash Blossom"
   python tools/read_official.py 14558127 --view
   python tools/read_official.py --search "Dark Magician"
+  python tools/read_official.py --text "If this card is Normal or Special Summoned" "Spell/Trap from your Deck"
 """
 import argparse
 import json
@@ -316,6 +317,58 @@ def search_cards_by_name(query, cdb_paths, limit=30):
     return distinct[:limit]
 
 
+def search_cards_by_text(phrases, cdb_paths, limit=15):
+    """Tìm card official có effect text chứa mọi cụm trong phrases.
+
+    Dùng để tìm official reference cùng cơ chế khi chưa biết tên card. Bỏ bản
+    reprint (alias) và card trùng tên; text ngắn đứng trước vì thường chỉ làm
+    đúng cơ chế cần tìm.
+    """
+    results = {}
+    where = " AND ".join("t.desc LIKE ?" for _ in phrases)
+    params = [f"%{phrase}%" for phrase in phrases]
+
+    for cdb in cdb_paths:
+        try:
+            conn = connect_cdb(cdb)
+        except Exception:
+            continue
+        try:
+            rows = conn.execute(
+                f"""
+                SELECT t.id, t.name, t.desc, d.type
+                FROM texts t
+                JOIN datas d ON t.id = d.id
+                WHERE d.alias = 0 AND {where}
+                """,
+                params,
+            ).fetchall()
+            for cid, name, desc, ctype in rows:
+                results.setdefault(cid, {"id": cid, "name": name, "desc": desc or "", "type": ctype or 0})
+        except sqlite3.Error:
+            pass
+        finally:
+            conn.close()
+
+    distinct = []
+    seen_names = set()
+    for item in sorted(results.values(), key=lambda item: (len(item["desc"]), item["id"])):
+        key = item["name"].strip().lower()
+        if key not in seen_names:
+            seen_names.add(key)
+            distinct.append(item)
+    return distinct[:limit]
+
+
+def text_snippet(desc, phrase, width=160):
+    """Đoạn effect text quanh cụm tìm kiếm đầu tiên, gọn trên một dòng."""
+    flat = " ".join(desc.split())
+    start = max(flat.lower().find(phrase.lower()), 0)
+    start = max(start - 40, 0)
+    snippet = flat[start:start + width]
+    return ("..." if start else "") + snippet + ("..." if start + width < len(flat) else "")
+
+
 def format_card_type(ctype):
     """Chuyển bitmask type sang chuỗi thân thiện."""
     tags = []
@@ -571,6 +624,11 @@ def main(argv=None):
         help="Chế độ tìm kiếm card theo tên",
     )
     parser.add_argument(
+        "--text", "-t",
+        action="store_true",
+        help="Tìm card theo effect text: mỗi tham số là một cụm phải có trong text",
+    )
+    parser.add_argument(
         "--fetch", "-f",
         action="store_true",
         help="Nếu game chưa có script, tự động tải fallback từ GitHub",
@@ -595,6 +653,25 @@ def main(argv=None):
 
     if not targets:
         parser.print_help()
+        return 0
+
+    if args.text:
+        phrases = [phrase.strip() for phrase in args.targets if phrase.strip()]
+        cdb_paths = collect_cdb_paths(game_dir)
+        if not cdb_paths:
+            print("[ERROR] Không có file CDB nào từ game để tìm kiếm.", file=sys.stderr)
+            return 1
+        matches = search_cards_by_text(phrases, cdb_paths)
+        if not matches:
+            print("Không tìm thấy card nào có effect text chứa: " + " + ".join(f"'{p}'" for p in phrases))
+            return 1
+        print(f"Tìm thấy {len(matches)} card (text ngắn trước):")
+        print("-" * 72)
+        for idx, m in enumerate(matches, 1):
+            print(f"  {idx:2d}. [{m['id']}] {m['name']} ({format_card_type(m['type'])})")
+            print(f"      {text_snippet(m['desc'], phrases[0])}")
+        print("-" * 72)
+        print("Xem script mẫu: python tools/read_official.py <ID>")
         return 0
 
     # Chế độ tìm kiếm nếu truyền --search hoặc input chứa từ khóa không phải số

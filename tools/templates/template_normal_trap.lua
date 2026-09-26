@@ -6,6 +6,7 @@
 -- ============================================================
 -- Effect 1: When your opponent Normal Summons a monster from
 --           the hand: Destroy that monster.
+--           You can only activate 1 "<<CARD_NAME>>" per turn.
 -- ============================================================
 
 local s,id=GetID()

@@ -2,15 +2,12 @@
 -- Card Name: <<CARD_NAME>>
 -- Passcode : <<PASSCODE>>
 -- Type     : Monster / Effect
--- Attribute: <<DARK|LIGHT|EARTH|WATER|FIRE|WIND|DIVINE>>
--- Level    : <<LEVEL>>
--- ATK/DEF  : <<ATK>> / <<DEF>>
--- Race     : <<RACE>>
 -- Archetype: <<ARCHETYPE_NAME>> (0x<<SETCODE>>)
 -- ============================================================
 -- Effect 1: When your opponent activates a monster effect
 --           (Quick Effect): You can discard this card;
 --           negate the activation, and if you do, destroy it.
+--           You can only use this effect of "<<CARD_NAME>>" once per turn.
 -- ============================================================
 
 local s,id=GetID()

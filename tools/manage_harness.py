@@ -6,9 +6,11 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
+import os
 import re
 import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 # manage_db nằm cùng thư mục; thêm tay vào sys.path để import được cả khi file
@@ -39,6 +41,14 @@ PASSCODE_BLOCK = 100000
 MAX_PASSCODE = 999999999
 # Khóa archetype trùng tên thư mục docs/queues/<archetype>/
 ARCHETYPE_KEY_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*$")
+# Archetype fan-made của repo dùng dải 0x780 trở lên (0x780-0x785, 0x789 đã có);
+# 'archetype add' không truyền setcode thì chọn setcode trống đầu tiên từ đây.
+FANMADE_SETCODE_START = 0x780
+# EDOPro so setcode theo 12 bit thấp (archetype gốc) cộng 4 bit cao (archetype con):
+# 0x1004 được coi là archetype con của 0x4, nên trùng 12 bit thấp là trùng archetype.
+SETCODE_BASE_MASK = 0xFFF
+SETCODE_DEF_RE = re.compile(r"^\s*(SET_[A-Z0-9_]+)\s*=\s*0x([0-9a-fA-F]+)", re.M)
+SETNAME_RE = re.compile(r"^!setname\s+0x([0-9a-fA-F]+)\s+(.+?)\s*$", re.M)
 
 MONSTER_TEMPLATES = {
     "effect_monster", "fusion_monster", "synchro_monster", "xyz_monster",
@@ -64,24 +74,44 @@ def get_project_paths():
         "template_dir": project_root / "tools" / "templates",
         "card_data": project_root / "card-data",
         "queues_dir": project_root / "docs" / "queues",
-        "pics_dir": project_root / "pics"
+        "pics_dir": project_root / "pics",
+        "constants": project_root / "script" / "constants.lua",
+        "strings": project_root / "strings.conf",
     }
+
+
+def load_feature_list(paths):
+    """Nội dung feature_list.json, hoặc None (đã báo lỗi) khi thiếu file."""
+    if not paths["feature_list"].exists():
+        print("Error: feature_list.json not found.", file=sys.stderr)
+        return None
+    with open(paths["feature_list"], "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_feature_list(paths, fl_data):
+    with open(paths["feature_list"], "w", encoding="utf-8") as f:
+        json.dump(fl_data, f, ensure_ascii=False, indent=2)
+
+
+def iter_cards(fl_data):
+    """(archetype, card) của mọi card trong feature_list."""
+    for arch_name, arch_info in fl_data.get("archetypes", {}).items():
+        for card in arch_info.get("cards", []):
+            yield arch_name, card
+
 
 def find_archetype_by_passcode(fl_data, passcode):
     for name, info in fl_data.get("archetypes", {}).items():
-        pr = info.get("passcode_range")
-        if pr:
-            try:
-                start, end = map(int, pr.split("-"))
-                if start <= passcode <= end:
-                    return name, info
-            except:
-                pass
+        bounds, _ = parse_passcode_range(info.get("passcode_range", ""))
+        if bounds and bounds[0] <= passcode <= bounds[1]:
+            return name, info
     return "Common", fl_data.get("archetypes", {}).get("Common", {})
 
 def normalize_archetype_key(name):
-    """Khóa so sánh tên archetype, khớp cách scan dò thư mục queue."""
-    return name.lower().replace("_", "")
+    """Khóa so sánh tên archetype: bỏ hoa/thường, '_' và khoảng trắng
+    ('White_Forest' = 'White Forest' = 'SET_WHITE_FOREST' bỏ tiền tố)."""
+    return re.sub(r"[^a-z0-9]", "", name.lower())
 
 
 def parse_setcode(raw):
@@ -120,40 +150,178 @@ def derive_passcode_range(setcode):
     return (start, end), None
 
 
-def add_archetype(name, setcode_raw, range_raw=None):
+def overlapping_archetype(archetypes, start, end):
+    """(tên, range) của archetype có passcode range chồng lên start-end, hoặc None.
+
+    Range chồng nhau nghĩa là hai archetype cùng tranh một passcode khi 'scan'
+    hoặc 'start' cấp ID.
+    """
+    for existing_name, info in archetypes.items():
+        other, _ = parse_passcode_range(info.get("passcode_range", ""))
+        if other and start <= other[1] and other[0] <= end:
+            return existing_name, other
+    return None
+
+
+def read_text_file(path):
+    """Nội dung file, giữ nguyên kiểu xuống dòng; '' khi file không tồn tại."""
+    try:
+        with open(path, encoding="utf-8", newline="") as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
+
+
+def insert_line(path, line, before):
+    """Chèn line trước dòng đầu tiên bắt đầu bằng before (không có thì cuối file)."""
+    text = read_text_file(path)
+    eol = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines()
+    index = next((i for i, existing in enumerate(lines) if existing.lower().startswith(before.lower())), len(lines))
+    lines.insert(index, line)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(eol.join(lines) + eol)
+
+
+def official_setcodes():
+    """{setcode: 'SET_X'} của archetype official trong bản cài game, None khi không đọc được."""
+    game_dir = Path(os.environ.get("EDOPRO_DIR") or manage_db.DEFAULT_EDOPRO_DIR)
+    text = read_text_file(game_dir / "repositories" / "delta-bagooska" / "script" / "archetype_setcode_constants.lua")
+    if not text:
+        return None
+    return {int(value, 16): const for const, value in SETCODE_DEF_RE.findall(text)}
+
+
+def repo_setcodes(paths):
+    """Setcode fan-made đã khai báo trong repo.
+
+    Trả về (names, constants): names = {setcode: {tên}} gộp script/constants.lua
+    (bỏ tiền tố SET_) và strings.conf; constants = {'SET_X': setcode}.
+    """
+    names, constants = {}, {}
+    for const, value in SETCODE_DEF_RE.findall(read_text_file(paths["constants"])):
+        constants[const] = int(value, 16)
+        names.setdefault(int(value, 16), set()).add(const[len("SET_"):])
+    for value, setname in SETNAME_RE.findall(read_text_file(paths["strings"])):
+        names.setdefault(int(value, 16), set()).add(setname)
+    return names, constants
+
+
+def fanmade_setcode_conflict(setcode, key, official, repo_names, repo_constants):
+    """Lý do setcode không dùng được cho archetype fan-made có khóa key, hoặc None."""
+    base = setcode & SETCODE_BASE_MASK
+    for code, const in (official or {}).items():
+        if code & SETCODE_BASE_MASK == base:
+            return (f"setcode {hex(setcode)} trùng archetype official {const} ({hex(code)}) — EDOPro coi card "
+                    "mang setcode này là một phần của archetype đó")
+    names = repo_names.get(setcode, set())
+    if names and key not in {normalize_archetype_key(n) for n in names}:
+        return (f"setcode {hex(setcode)} đã được dùng cho {', '.join(sorted(names))} "
+                "trong script/constants.lua hoặc strings.conf")
+    for const, value in repo_constants.items():
+        if normalize_archetype_key(const[len("SET_"):]) == key and value != setcode:
+            return f"{const} đã khai báo setcode {hex(value)} trong script/constants.lua"
+    return None
+
+
+def pick_fanmade_setcode(key, official, repo_names, repo_constants, registered, archetypes):
+    """Setcode cho archetype fan-made khi 'archetype add' không truyền setcode.
+
+    Tên đã có setcode trong constants.lua/strings.conf (archetype của dev khác
+    chưa vào feature_list) thì dùng lại; không thì lấy setcode trống đầu tiên từ
+    FANMADE_SETCODE_START có passcode range không chồng archetype nào.
+    """
+    for code, names in repo_names.items():
+        if key in {normalize_archetype_key(n) for n in names}:
+            return code
+    for setcode in range(FANMADE_SETCODE_START, SETCODE_BASE_MASK + 1):
+        if setcode in registered or setcode in repo_names:
+            continue
+        if fanmade_setcode_conflict(setcode, key, official, repo_names, repo_constants):
+            continue
+        bounds, error = derive_passcode_range(setcode)
+        if error is None and overlapping_archetype(archetypes, *bounds) is None:
+            return setcode
+    return None
+
+
+def register_fanmade_setcode(paths, name, setcode, repo_constants):
+    """Ghi SET_ vào constants.lua và !setname vào strings.conf nếu còn thiếu.
+
+    Trả về (tên hằng dùng trong Lua, danh sách file đã ghi).
+    """
+    key = normalize_archetype_key(name)
+    const = next((c for c, v in repo_constants.items()
+                  if v == setcode and normalize_archetype_key(c[len("SET_"):]) == key), None)
+    written = []
+    if const is None:
+        const = "SET_" + re.sub(r"[^A-Z0-9]+", "_", name.upper()).strip("_")
+        insert_line(paths["constants"], f"{const:<34}= 0x{setcode:x}", "-- Custom counter")
+        written.append("script/constants.lua")
+    if setcode not in {int(v, 16) for v, _ in SETNAME_RE.findall(read_text_file(paths["strings"]))}:
+        insert_line(paths["strings"], f"!setname 0x{setcode:x} {name.replace('_', ' ')}", "#Custom Counter")
+        written.append("strings.conf")
+    return const, written
+
+
+def add_archetype(name, setcode_raw=None, range_raw=None):
     """Đăng ký archetype mới vào feature_list.json.
 
     AGENTS.md cấm sửa tay feature_list.json, nên đây là đường duy nhất để mở
-    một archetype mới trước khi 'start' cấp passcode cho card của nó.
+    một archetype mới trước khi 'start' cấp passcode cho card của nó. Setcode
+    official (có trong bản cài game) chỉ được đăng ký; setcode fan-made được
+    kiểm tra trùng rồi ghi luôn vào script/constants.lua và strings.conf.
     """
-    from datetime import datetime
     paths = get_project_paths()
 
     if not ARCHETYPE_KEY_RE.match(name):
         print(f"Error: tên archetype '{name}' không hợp lệ — dùng chữ/số/'_' và bắt đầu bằng chữ "
               "(vd Icejade, White_Forest).", file=sys.stderr)
         return False
-    if not paths["feature_list"].exists():
-        print("Error: feature_list.json not found.", file=sys.stderr)
-        return False
 
-    setcode, error = parse_setcode(setcode_raw)
-    if error:
-        print(f"Error: {error}", file=sys.stderr)
+    fl_data = load_feature_list(paths)
+    if fl_data is None:
         return False
-
-    with open(paths["feature_list"], "r", encoding="utf-8") as f:
-        fl_data = json.load(f)
     archetypes = fl_data.setdefault("archetypes", {})
 
     key = normalize_archetype_key(name)
+    registered = {}
     for existing_name, info in archetypes.items():
         if normalize_archetype_key(existing_name) == key:
             print(f"Error: archetype '{existing_name}' đã tồn tại trong feature_list.json.", file=sys.stderr)
             return False
         existing_setcode, _ = parse_setcode(info.get("setcode", "0"))
-        if existing_setcode == setcode:
-            print(f"Error: setcode {hex(setcode)} đã thuộc archetype '{existing_name}'.", file=sys.stderr)
+        if existing_setcode:
+            registered[existing_setcode] = existing_name
+
+    official = official_setcodes()
+    if official is None:
+        print("Warning: không đọc được archetype_setcode_constants.lua của bản cài EDOPro ($EDOPRO_DIR) — "
+              "không phân biệt được archetype official với fan-made.", file=sys.stderr)
+    repo_names, repo_constants = repo_setcodes(paths)
+
+    if setcode_raw is None:
+        if official is None:
+            print("Error: cần bản cài game để chọn setcode trống; truyền setcode thủ công.", file=sys.stderr)
+            return False
+        setcode = pick_fanmade_setcode(key, official, repo_names, repo_constants, registered, archetypes)
+        if setcode is None:
+            print(f"Error: không còn setcode fan-made trống từ {hex(FANMADE_SETCODE_START)}.", file=sys.stderr)
+            return False
+    else:
+        setcode, error = parse_setcode(setcode_raw)
+        if error:
+            print(f"Error: {error}", file=sys.stderr)
+            return False
+
+    if setcode in registered:
+        print(f"Error: setcode {hex(setcode)} đã thuộc archetype '{registered[setcode]}'.", file=sys.stderr)
+        return False
+    official_const = (official or {}).get(setcode)
+    if official_const is None:
+        error = fanmade_setcode_conflict(setcode, key, official, repo_names, repo_constants)
+        if error:
+            print(f"Error: {error}.", file=sys.stderr)
             return False
 
     if range_raw:
@@ -164,27 +332,26 @@ def add_archetype(name, setcode_raw, range_raw=None):
         print(f"Error: {error}", file=sys.stderr)
         return False
     start, end = bounds
+    overlap = overlapping_archetype(archetypes, start, end)
+    if overlap:
+        other_name, other = overlap
+        print(f"Error: range {start}-{end} chồng lên '{other_name}' ({other[0]}-{other[1]}).", file=sys.stderr)
+        return False
 
-    # Range chồng nhau nghĩa là hai archetype cùng tranh một passcode khi 'scan'
-    # hoặc 'start' cấp ID.
-    for existing_name, info in archetypes.items():
-        other, _ = parse_passcode_range(info.get("passcode_range", ""))
-        if other and start <= other[1] and other[0] <= end:
-            print(f"Error: range {start}-{end} chồng lên '{existing_name}' ({other[0]}-{other[1]}).", file=sys.stderr)
-            return False
-
+    if official_const is None:
+        const, written = register_fanmade_setcode(paths, name, setcode, repo_constants)
     archetypes[name] = {"setcode": f"0x{setcode:x}", "passcode_range": f"{start}-{end}", "cards": []}
     fl_data["last_updated"] = datetime.now().strftime("%Y-%m-%d")
-    with open(paths["feature_list"], "w", encoding="utf-8") as f:
-        json.dump(fl_data, f, ensure_ascii=False, indent=2)
+    save_feature_list(paths, fl_data)
 
     print(f"Registered archetype '{name}': setcode 0x{setcode:x}, passcode range {start}-{end}.")
-    print("\n=== Việc cần làm tiếp theo ===")
-    print("1. Archetype official: tra setcode trong archetype_setcode_constants.lua của bản cài game và KHÔNG thêm vào "
-          "script/constants.lua (EDOPro đã có sẵn).")
-    print(f"2. Archetype fan-made: thêm 'SET_{name.upper()} = 0x{setcode:x}' vào script/constants.lua và "
-          f"'!setname 0x{setcode:x} {name.replace('_', ' ')}' vào strings.conf (docs/agent-rules.md §2.2).")
-    print(f"3. Ảnh queue đặt trong docs/queues/{name}/ với tiền tố p_ rồi chạy 'scan', hoặc tạo card trực tiếp:")
+    if official_const:
+        print(f"Archetype official: dùng {official_const} trong Lua; EDOPro đã có tên hiển thị, "
+              "không thêm vào script/constants.lua hay strings.conf.")
+    else:
+        done = f"đã ghi {', '.join(written)}" if written else "script/constants.lua và strings.conf đã có sẵn"
+        print(f"Archetype fan-made: dùng {const} trong Lua kèm Duel.LoadScript(\"constants.lua\") ({done}).")
+    print(f"Tạo card: đặt ảnh p_<tên>.jpg vào docs/queues/{name}/ rồi chạy 'scan', hoặc")
     print(f"   python tools/manage_harness.py start {start} \"<name>\" <template>")
     return True
 
@@ -320,7 +487,7 @@ def print_next_steps(passcode, template_type):
     print(f"1. card-data/c{passcode}.json — điền:")
     print(f"   - desc: effect text thật (placeholder '{PLACEHOLDER_DESC}' bị chặn)")
     if t in MONSTER_TEMPLATES:
-        print("   - race / attribute: bắt buộc khác 0, đúng 1 bit")
+        print("   - race / attribute: ghi tên, vd \"Warrior\", \"LIGHT\" (đúng 1 giá trị)")
         if t == "link_monster":
             print("   - level: Link rating; linkmarkers: tên marker (vd [\"Bottom-Left\",\"Bottom\"])")
             print("   - atk (Link không có def)")
@@ -328,9 +495,9 @@ def print_next_steps(passcode, template_type):
             print("   - level (Rank nếu Xyz), atk, def (\"?\" nếu ATK/DEF ?)")
         if t == "pendulum_monster":
             print("   - lscale / rscale: Pendulum Scale")
-    print("   - category: bitmask theo docs/agent-rules.md; strings: hint cho aux.Stringid")
+    print("   - category: danh sách tên, vd [\"Search\", \"Send to Hand\"]; strings: prompt cho aux.Stringid")
     print(f"2. script/c{passcode}.lua — thay hết placeholder <<...>>, viết logic effect")
-    print("   (tham khảo official qua python tools/read_official.py <passcode>)")
+    print("   (tìm official cùng cơ chế: python tools/read_official.py --text \"<cụm trong effect>\")")
     print(f"3. Artwork pics/{passcode}.jpg|.png — verify tự copy từ queue image nếu còn;")
     print("   tự thêm thì KHÔNG dùng .jpeg (EDOPro không nạp)")
     print(f"4. Chạy: python .\\tools\\manage_harness.py verify {passcode}")
@@ -359,28 +526,19 @@ def start_card(passcode, card_name, template_type):
               "Nếu muốn làm lại từ đầu, xóa các file trên trước.", file=sys.stderr)
         return False
 
-    # 3. Load and check feature_list.json
-    if not paths["feature_list"].exists():
-        print(f"Error: feature_list.json not found.", file=sys.stderr)
+    # 3. Passcode chỉ được dùng lại khi entry đang 'pending' (do scan cấp)
+    fl_data = load_feature_list(paths)
+    if fl_data is None:
         return False
 
-    with open(paths["feature_list"], "r", encoding="utf-8") as f:
-        fl_data = json.load(f)
+    matches = [(arch_name, card) for arch_name, card in iter_cards(fl_data)
+               if card.get("passcode") == str(passcode)]
+    for arch_name, card in matches:
+        if card.get("status") != "pending":
+            print(f"Error: Passcode {passcode} is already registered under '{arch_name}' (Card: '{card['name']}') with status '{card.get('status')}'.", file=sys.stderr)
+            return False
+    existing_archetype, existing_card = matches[-1] if matches else (None, None)
 
-    # Check if passcode is already registered
-    existing_card = None
-    existing_archetype = None
-    for arch_name, arch_info in fl_data.get("archetypes", {}).items():
-        for card in arch_info.get("cards", []):
-            if card.get("passcode") == str(passcode):
-                if card.get("status") != "pending":
-                    print(f"Error: Passcode {passcode} is already registered under '{arch_name}' (Card: '{card['name']}') with status '{card.get('status')}'.", file=sys.stderr)
-                    return False
-                else:
-                    existing_card = card
-                    existing_archetype = arch_name
-
-    # Find or guess archetype
     if existing_archetype:
         archetype = existing_archetype
         arch_info = fl_data["archetypes"][archetype]
@@ -388,12 +546,8 @@ def start_card(passcode, card_name, template_type):
         archetype, arch_info = find_archetype_by_passcode(fl_data, passcode)
     print(f"Assigning card to Archetype: {archetype}")
 
-    # Parse setcode
-    setcode_str = arch_info.get("setcode", "0")
-    try:
-        setcode_val = int(setcode_str, 16) if setcode_str.startswith("0x") else int(setcode_str)
-    except:
-        setcode_val = 0
+    setcode_val, _ = parse_setcode(arch_info.get("setcode", "0"))
+    setcode_val = setcode_val or 0
 
     # ===== Mutations: tạo file trước, đổi tên queue & ghi feature_list sau cùng =====
     # 4. Create specs JSON
@@ -402,7 +556,7 @@ def start_card(passcode, card_name, template_type):
 
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(spec_data, f, ensure_ascii=False, indent=2)
-    print(f"Created specs spec JSON: {json_path.relative_to(paths['root'])}")
+    print(f"Created spec JSON: {json_path.relative_to(paths['root'])}")
 
     # 5. Copy template Lua script (lỗi thì dọn JSON vừa tạo để không để lại trạng thái nửa vời)
     try:
@@ -470,13 +624,9 @@ def start_card(passcode, card_name, template_type):
         if new_queue_file_path:
             new_card_entry["queue_file"] = new_queue_file_path
 
-        if archetype not in fl_data["archetypes"]:
-            fl_data["archetypes"][archetype] = {"cards": []}
-            
-        fl_data["archetypes"][archetype]["cards"].append(new_card_entry)
-    
-    with open(paths["feature_list"], "w", encoding="utf-8") as f:
-        json.dump(fl_data, f, ensure_ascii=False, indent=2)
+        fl_data["archetypes"].setdefault(archetype, {"cards": []})["cards"].append(new_card_entry)
+
+    save_feature_list(paths, fl_data)
     print(f"Added/updated card in feature_list.json under '{archetype}'.")
     print(f"Status set to 'working'. Happy coding!")
     print_next_steps(passcode, template_type)
@@ -584,12 +734,19 @@ def verify_card(passcode):
         ["powershell", "-ExecutionPolicy", "Bypass", "-File", "tools/validate_scripts.ps1",
          "-Path", f"script/c{passcode}.lua"], paths["root"])
 
+    # Validator in dòng trạng thái kèm tên file, các dòng lý do (CONST:, API:...) thụt lề
+    # ngay bên dưới; phải in cả hai thì agent mới biết sửa gì.
     file_failed = False
+    in_block = False
     for line in (stdout or "").splitlines():
         if f"c{passcode}.lua" in line:
             print(f"  Validator output: {line.strip()}")
-            if "FAIL" in line:
-                file_failed = True
+            file_failed = file_failed or "FAIL" in line
+            in_block = True
+        elif in_block and line.startswith(" ") and line.strip():
+            print(f"    {line.strip()}")
+        else:
+            in_block = False
 
     if rc != 0 or file_failed:
         print("Error: Script validation failed for this passcode. Please fix errors before declaring success.", file=sys.stderr)
@@ -609,93 +766,111 @@ def verify_card(passcode):
         return False
     print("System sync verified successfully.")
 
-    # 5. Update status to done and finalize queue file name
+    # 4. Update status to done and finalize queue file name
     print("Step 4: Updating state to done...")
-    if not paths["feature_list"].exists():
-        print("Error: feature_list.json not found.", file=sys.stderr)
-        return False
-        
-    with open(paths["feature_list"], "r", encoding="utf-8") as f:
-        fl_data = json.load(f)
-        
-    card_found = False
-    for arch_name, arch_info in fl_data.get("archetypes", {}).items():
-        for card in arch_info.get("cards", []):
-            if card.get("passcode") == str(passcode):
-                card_found = True
-                card["status"] = "done"
-                
-                # Ảnh queue hết vai trò khi artwork đã vào pics/: copy nếu thiếu,
-                # xác nhận, rồi xóa để queue không phình ra theo thời gian.
-                queue_path_str = card.get("queue_file")
-                if queue_path_str:
-                    q_path = paths["root"] / queue_path_str
-                    if q_path.exists():
-                        deleted, message = retire_queue_image(paths, passcode, q_path)
-                        if deleted:
-                            card.pop("queue_file", None)
-                            print(message)
-                        else:
-                            print(f"Warning: {message}", file=sys.stderr)
-                            # Chưa xác nhận được artwork: giữ ảnh, chỉ đánh dấu done
-                            if q_path.name.startswith("w_"):
-                                new_path = q_path.parent / q_path.name.replace("w_", "d_", 1)
-                                try:
-                                    shutil.move(str(q_path), str(new_path))
-                                    card["queue_file"] = str(new_path.relative_to(paths["root"]).as_posix())
-                                    print(f"Giữ queue image, đổi tên sang trạng thái done: {new_path.name}")
-                                except Exception as e:
-                                    print(f"Warning: Failed to rename queue image: {e}", file=sys.stderr)
-                break
-        if card_found:
-            break
-            
-    if not card_found:
-        print(f"Warning: Card {passcode} not found in feature_list.json. Cannot update status.")
+    fl_data = load_feature_list(paths)
+    if fl_data is None:
         return False
 
-    with open(paths["feature_list"], "w", encoding="utf-8") as f:
-        json.dump(fl_data, f, ensure_ascii=False, indent=2)
-        
+    card = next((card for _, card in iter_cards(fl_data) if card.get("passcode") == str(passcode)), None)
+    if card is None:
+        print(f"Warning: Card {passcode} not found in feature_list.json. Cannot update status.")
+        return False
+    card["status"] = "done"
+
+    # Ảnh queue hết vai trò khi artwork đã vào pics/: copy nếu thiếu,
+    # xác nhận, rồi xóa để queue không phình ra theo thời gian.
+    queue_path_str = card.get("queue_file")
+    q_path = paths["root"] / queue_path_str if queue_path_str else None
+    if q_path and q_path.exists():
+        deleted, message = retire_queue_image(paths, passcode, q_path)
+        if deleted:
+            card.pop("queue_file", None)
+            print(message)
+        else:
+            print(f"Warning: {message}", file=sys.stderr)
+            # Chưa xác nhận được artwork: giữ ảnh, chỉ đánh dấu done
+            if q_path.name.startswith("w_"):
+                new_path = q_path.parent / q_path.name.replace("w_", "d_", 1)
+                try:
+                    shutil.move(str(q_path), str(new_path))
+                    card["queue_file"] = str(new_path.relative_to(paths["root"]).as_posix())
+                    print(f"Giữ queue image, đổi tên sang trạng thái done: {new_path.name}")
+                except Exception as e:
+                    print(f"Warning: Failed to rename queue image: {e}", file=sys.stderr)
+
+    save_feature_list(paths, fl_data)
     print(f"\nSUCCESS: Card {passcode} passed static validation; legacy status set to 'done'.")
     print("EDOPro runtime behavior is NOT verified. Run in-game scenarios before declaring the card complete.")
 
     return True
 
+def name_from_queue_stem(stem):
+    """Tên card suy từ tên file queue: 'p_blue_eyes_and_the_dragon' -> 'Blue Eyes & the Dragon'."""
+    words = []
+    for word in strip_queue_prefix(stem).split("_"):
+        lower = word.lower()
+        if lower == "and":
+            words.append("&")
+        elif lower == "the" and words:
+            words.append("the")
+        elif lower in ("in", "of", "to", "for", "with", "by", "at", "from"):
+            words.append(lower)
+        else:
+            words.append(word.capitalize())
+    return " ".join(words)
+
+
+def next_free_passcode(arch_name, arch_info, taken_codes):
+    """Passcode trống đầu tiên trong range của archetype; hết range thì lấy dải chung 799000xx."""
+    raw_range = arch_info.get("passcode_range")
+    if raw_range:
+        bounds, error = parse_passcode_range(raw_range)
+        if error:
+            print(f"Error calculating passcode range for {arch_name}: {error}")
+        else:
+            candidate = bounds[0]
+            while candidate in taken_codes:
+                candidate += 1
+            if candidate <= bounds[1]:
+                return candidate
+
+    common_candidates = [code for code in taken_codes if str(code).startswith("799000")]
+    candidate = max(common_candidates) + 1 if common_candidates else 79900001
+    while candidate in taken_codes:
+        candidate += 1
+    return candidate
+
+
 def scan_pending_cards():
-    from datetime import datetime
     paths = get_project_paths()
-    if not paths["feature_list"].exists():
-        print(f"Error: feature_list.json not found.", file=sys.stderr)
-        return
+    fl_data = load_feature_list(paths)
+    if fl_data is None:
+        return False
+    archetypes = fl_data.setdefault("archetypes", {})
 
-    with open(paths["feature_list"], "r", encoding="utf-8") as f:
-        fl_data = json.load(f)
-
-    # Gather all registered stems and passcodes to prevent duplicates
+    # Ảnh đã đăng ký (bất kể tiền tố trạng thái) và passcode đã cấp thì bỏ qua
     registered_stems = set()
     registered_passcodes = set()
-    for arch_name, arch_info in fl_data.get("archetypes", {}).items():
-        for card in arch_info.get("cards", []):
-            if "queue_file" in card:
-                registered_stems.add(strip_queue_prefix(Path(card["queue_file"]).stem).lower())
-            if "passcode" in card:
-                registered_passcodes.add(card["passcode"])
+    for _, card in iter_cards(fl_data):
+        if "queue_file" in card:
+            registered_stems.add(strip_queue_prefix(Path(card["queue_file"]).stem).lower())
+        if "passcode" in card:
+            registered_passcodes.add(card["passcode"])
 
-    # Locate all p_ files in queues
     queues_dir = paths["queues_dir"]
-    extensions = [f"*{ext}" for ext in QUEUE_EXTS]
-    found_pending = []
-    
-    for ext in extensions:
-        for p in queues_dir.rglob(ext):
-            if p.name.startswith("p_"):
-                if strip_queue_prefix(p.stem).lower() not in registered_stems:
-                    found_pending.append(p)
-
+    if not queues_dir.is_dir():
+        # Git không lưu thư mục rỗng nên clone mới chưa có docs/queues/
+        print(f"{queues_dir.relative_to(paths['root']).as_posix()}/ chưa tồn tại — tạo "
+              "docs/queues/<Archetype>/ rồi đặt ảnh p_<tên card>.jpg vào đó.")
+        return True
+    found_pending = [
+        p for ext in QUEUE_EXTS for p in queues_dir.rglob(f"*{ext}")
+        if p.name.startswith("p_") and strip_queue_prefix(p.stem).lower() not in registered_stems
+    ]
     if not found_pending:
         print("No new pending cards found in the queue directory.")
-        return
+        return True
 
     print(f"Found {len(found_pending)} new pending queue files. Registering...")
 
@@ -707,86 +882,29 @@ def scan_pending_cards():
               "CDB trong repo. Đặt $EDOPRO_DIR để kiểm tra cả CDB của game.", file=sys.stderr)
     taken_codes |= {int(code) for code in registered_passcodes if str(code).isdigit()}
 
-    # For each found pending file:
-    added_count = 0
     for p_path in found_pending:
-        # Determine archetype from parent folder name
-        # If parent folder is queues_dir, default to Common
-        arch_dir = p_path.parent
-        if arch_dir == queues_dir:
-            archetype = "Common"
-        else:
-            archetype = arch_dir.name
-            
-        # Normalize/Clean archetype name to match feature_list.json keys
-        actual_arch_name = "Common"
-        for name in fl_data.get("archetypes", {}).keys():
-            if name.lower().replace("_", "") == archetype.lower().replace("_", ""):
-                actual_arch_name = name
-                break
+        # Thư mục chứa ảnh là archetype; ảnh nằm thẳng trong queues/ hoặc thư mục lạ thì vào Common
+        folder = "Common" if p_path.parent == queues_dir else p_path.parent.name
+        arch_name = next((name for name in archetypes
+                          if normalize_archetype_key(name) == normalize_archetype_key(folder)), "Common")
+        arch_info = archetypes.setdefault(arch_name, {"cards": []})
 
-        if actual_arch_name not in fl_data["archetypes"]:
-            actual_arch_name = "Common"
+        card_name = name_from_queue_stem(p_path.stem)
+        passcode = next_free_passcode(arch_name, arch_info, taken_codes)
+        taken_codes.add(passcode)
 
-        arch_info = fl_data["archetypes"][actual_arch_name]
-
-        # Generate name from filename
-        words = strip_queue_prefix(p_path.stem).split("_")
-        formatted_words = []
-        for word in words:
-            if word.lower() == "and":
-                formatted_words.append("&")
-            elif word.lower() == "the" and formatted_words:
-                formatted_words.append("the")
-            elif word.lower() in ("in", "of", "to", "for", "with", "by", "at", "from"):
-                formatted_words.append(word.lower())
-            else:
-                formatted_words.append(word.capitalize())
-        card_name = " ".join(formatted_words)
-
-        # Generate passcode
-        passcode = None
-        pr = arch_info.get("passcode_range")
-        if pr:
-            try:
-                start_range, end_range = map(int, pr.split("-"))
-                candidate = start_range
-                while candidate in taken_codes:
-                    candidate += 1
-                if candidate <= end_range:
-                    passcode = str(candidate)
-            except Exception as e:
-                print(f"Error calculating passcode range for {actual_arch_name}: {e}")
-                
-        if not passcode:
-            common_candidates = [code for code in taken_codes if str(code).startswith("799000")]
-            candidate = max(common_candidates) + 1 if common_candidates else 79900001
-            while candidate in taken_codes:
-                candidate += 1
-            passcode = str(candidate)
-
-        registered_passcodes.add(passcode)
-        taken_codes.add(int(passcode))
-
-        # Build card entry
-        rel_path = str(p_path.relative_to(paths["root"]).as_posix())
-        new_card_entry = {
+        arch_info["cards"].append({
             "name": card_name,
-            "passcode": passcode,
+            "passcode": str(passcode),
             "status": "pending",
-            "queue_file": rel_path
-        }
-
-        arch_info["cards"].append(new_card_entry)
-        print(f"  [+] Registered: {card_name} (Passcode: {passcode}) under '{actual_arch_name}'")
-        added_count += 1
+            "queue_file": p_path.relative_to(paths["root"]).as_posix(),
+        })
+        print(f"  [+] Registered: {card_name} (Passcode: {passcode}) under '{arch_name}'")
 
     fl_data["last_updated"] = datetime.now().strftime("%Y-%m-%d")
-
-    with open(paths["feature_list"], "w", encoding="utf-8") as f:
-        json.dump(fl_data, f, ensure_ascii=False, indent=2)
-        
-    print(f"Successfully registered {added_count} new pending cards in feature_list.json!")
+    save_feature_list(paths, fl_data)
+    print(f"Successfully registered {len(found_pending)} new pending cards in feature_list.json!")
+    return True
 
 def tracked_paths(root, subdir):
     """Đường dẫn dưới subdir đang được Git theo dõi; None khi không hỏi được Git.
@@ -812,12 +930,9 @@ def cleanup_queue(apply_changes=False):
     giữ lại và báo lý do, vì lúc đó ảnh queue có thể là bản duy nhất.
     """
     paths = get_project_paths()
-    if not paths["feature_list"].exists():
-        print("Error: feature_list.json not found.", file=sys.stderr)
+    fl_data = load_feature_list(paths)
+    if fl_data is None:
         return False
-
-    with open(paths["feature_list"], "r", encoding="utf-8") as f:
-        fl_data = json.load(f)
 
     if not paths["queues_dir"].is_dir():
         print(f"Error: {paths['queues_dir']} không tồn tại.", file=sys.stderr)
@@ -836,16 +951,15 @@ def cleanup_queue(apply_changes=False):
     # Giữ lại chỉ làm mọi lệnh đọc queue hiểu sai trạng thái card.
     card_by_queue = {}
     stale_refs = []
-    for arch_info in fl_data.get("archetypes", {}).values():
-        for card in arch_info.get("cards", []):
-            queue_file = card.get("queue_file")
-            if not queue_file:
-                continue
-            key = queue_key(queue_file)
-            if key in existing_keys:
-                card_by_queue[key] = card
-            else:
-                stale_refs.append((card, queue_file))
+    for _, card in iter_cards(fl_data):
+        queue_file = card.get("queue_file")
+        if not queue_file:
+            continue
+        key = queue_key(queue_file)
+        if key in existing_keys:
+            card_by_queue[key] = card
+        else:
+            stale_refs.append((card, queue_file))
 
     for card, queue_file in stale_refs:
         print(f"  [GỠ  ] {queue_file} — ảnh không còn, gỡ 'queue_file' của {card.get('passcode')}")
@@ -902,8 +1016,7 @@ def cleanup_queue(apply_changes=False):
         print(f"  [XÓA ] {rel}{note}")
 
     if apply_changes and (ready or stale_refs):
-        with open(paths["feature_list"], "w", encoding="utf-8") as f:
-            json.dump(fl_data, f, ensure_ascii=False, indent=2)
+        save_feature_list(paths, fl_data)
 
     verb = "Đã xóa" if apply_changes else "Sẽ xóa"
     print()
@@ -941,7 +1054,9 @@ def main():
     archetype_sub = archetype_parser.add_subparsers(dest="archetype_command", required=True)
     archetype_add = archetype_sub.add_parser("add", help="Register a new archetype with its setcode and passcode range")
     archetype_add.add_argument("name", type=str, help="Archetype key, e.g. Icejade or White_Forest")
-    archetype_add.add_argument("setcode", type=str, help="Setcode in hex (0x16e) or decimal")
+    archetype_add.add_argument("setcode", type=str, nargs="?",
+                               help="Setcode in hex (0x16e) or decimal; omit for a new fan-made archetype "
+                                    "to pick a free one and write it to script/constants.lua and strings.conf")
     archetype_add.add_argument("--range", dest="passcode_range", type=str,
                                help="Override the derived passcode range, e.g. 36600001-36699999")
 
@@ -957,7 +1072,7 @@ def main():
     elif args.command == "verify":
         sys.exit(0 if verify_card(args.passcode) else 1)
     elif args.command == "scan":
-        scan_pending_cards()
+        sys.exit(0 if scan_pending_cards() else 1)
     elif args.command == "archetype":
         sys.exit(0 if add_archetype(args.name, args.setcode, args.passcode_range) else 1)
     elif args.command == "cleanup":

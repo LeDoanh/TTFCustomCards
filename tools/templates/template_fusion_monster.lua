@@ -2,15 +2,12 @@
 -- Card Name: <<CARD_NAME>>
 -- Passcode : <<PASSCODE>>
 -- Type     : Monster / Fusion / Effect
--- Attribute: <<DARK|LIGHT|EARTH|WATER|FIRE|WIND|DIVINE>>
--- Level    : <<LEVEL>>
--- ATK/DEF  : <<ATK>> / <<DEF>>
--- Race     : <<RACE>>
 -- Archetype: <<ARCHETYPE_NAME>> (0x<<SETCODE>>)
 -- Materials: 2+ "<<ARCHETYPE_NAME>>" monsters
 -- ============================================================
 -- Effect 1: If this card is Fusion Summoned: You can target
 --           1 card your opponent controls; destroy it.
+--           You can only use this effect of "<<CARD_NAME>>" once per turn.
 -- ============================================================
 
 local s,id=GetID()
@@ -30,6 +27,7 @@ function s.initial_effect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_DESTROY)
     e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)   -- Optional Trigger, responds to this card
+    e1:SetProperty(EFFECT_FLAG_DELAY)                      -- "If" trigger: cannot miss the timing
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)                     -- Fires when this card is Special Summoned
     e1:SetCountLimit(1,id)                                 -- Hard once per turn
     e1:SetCondition(s.spcon)                               -- Only when Fusion Summoned

@@ -2,7 +2,7 @@
 """TTF Card Database CLI Manager.
 
 Compiler/validator cho card-data.cdb, mô phỏng theo chuẩn của
-Datacorn (docs/resources/Datacorn) - trình editor CDB chính thức của
+Datacorn (https://github.com/ProjectIgnis/Datacorn) - trình editor CDB chính thức của
 ProjectIgnis - về schema, bitfield và cách đóng gói dữ liệu:
   - Schema datas/texts + PRAGMA page_size=4096 giống Datacorn tạo DB mới.
   - setcode: tối đa 4 setcode 16-bit đóng gói trong 1 số 64-bit.
@@ -150,7 +150,7 @@ DEFAULT_EDOPRO_DIR = "F:/Game/ProjectIgnis"
 
 
 def sibling_cdb_paths(root: Path):
-    """CDB ở gốc repo thuộc luồng dữ liệu khác (docs/database-workflow.md).
+    """CDB ở gốc repo thuộc luồng dữ liệu khác (docs/agent-rules.md §3.4).
 
     Là mọi *.cdb trừ CDB do compiler sinh, để CDB cộng đồng mới thêm vào repo
     tự được đối chiếu passcode mà không phải sửa danh sách.
@@ -270,6 +270,41 @@ def _to_int(value, field, errors, allow_qmark=False):
     return 0
 
 
+def _name_lookup(table):
+    """{tên viết thường: bit} của một bảng bitfield.
+
+    Nhận cả tên đầy đủ ("Dual (Gemini)"), phần trước ngoặc ("Dual") và phần
+    trong ngoặc khi không trùng dòng khác ("Gemini"; "Rush" thì bỏ vì nhiều dòng).
+    """
+    lookup, inner = {}, {}
+    for bit, name in table.items():
+        lookup[name.lower()] = bit
+        base, _, rest = name.partition(" (")
+        lookup.setdefault(base.lower(), bit)
+        if rest:
+            inner.setdefault(rest.rstrip(")").lower(), []).append(bit)
+    for alias, bits in inner.items():
+        if len(bits) == 1:
+            lookup.setdefault(alias, bits[0])
+    return lookup
+
+
+def _to_bitfield(value, field, table, table_name, errors):
+    """Bitfield từ số, tên trong table, hoặc danh sách tên/số (OR lại)."""
+    if not isinstance(value, (str, list)):
+        return _to_int(value, field, errors)
+    lookup = _name_lookup(table)
+    result = 0
+    for item in value if isinstance(value, list) else [value]:
+        if isinstance(item, str) and item.strip().lower() in lookup:
+            result |= lookup[item.strip().lower()]
+        elif isinstance(item, str) and not re.fullmatch(r"\s*(0x[0-9a-fA-F]+|\d+)\s*", item):
+            errors.append(f"'{field}' không có tên {item!r} (tên hợp lệ ở bảng {table_name} trong tools/manage_db.py)")
+        else:
+            result |= _to_int(item, field, errors)
+    return result
+
+
 def _pack_setcodes(setcodes, errors):
     """Đóng gói tối đa 4 setcode 16-bit thành 1 số 64-bit (theo Datacorn)."""
     if len(setcodes) > MAX_SETCODES:
@@ -298,18 +333,20 @@ def normalize_card(card_data, errors):
       - "lscale"/"rscale": 0-13         -> đóng gói vào cột level
       - "linkmarkers": ["Top","Bottom"] -> bitfield ghi vào cột def (Link)
       - "atk"/"def": "?"                -> -2
+      - "type"/"race"/"attribute"/"category": tên hoặc danh sách tên thay cho số,
+        vd "race": "Warrior", "category": ["Search", "Send to Hand"]
     """
     cols = {}
     cols["id"] = _to_int(card_data.get("id"), "id", errors)
     cols["ot"] = _to_int(card_data.get("ot", OT_CUSTOM), "ot", errors)
     cols["alias"] = _to_int(card_data.get("alias", 0), "alias", errors)
-    cols["type"] = _to_int(card_data.get("type", 0), "type", errors)
+    cols["type"] = _to_bitfield(card_data.get("type", 0), "type", TYPES, "TYPES", errors)
     cols["atk"] = _to_int(card_data.get("atk", 0), "atk", errors, allow_qmark=True)
     cols["def"] = _to_int(card_data.get("def", 0), "def", errors, allow_qmark=True)
     cols["level"] = _to_int(card_data.get("level", 0), "level", errors)
-    cols["race"] = _to_int(card_data.get("race", 0), "race", errors)
-    cols["attribute"] = _to_int(card_data.get("attribute", 0), "attribute", errors)
-    cols["category"] = _to_int(card_data.get("category", 0), "category", errors)
+    cols["race"] = _to_bitfield(card_data.get("race", 0), "race", RACES, "RACES", errors)
+    cols["attribute"] = _to_bitfield(card_data.get("attribute", 0), "attribute", ATTRIBUTES, "ATTRIBUTES", errors)
+    cols["category"] = _to_bitfield(card_data.get("category", 0), "category", CATEGORIES, "CATEGORIES", errors)
 
     # --- setcodes: danh sách -> đóng gói 64-bit ---
     raw_setcode = _to_int(card_data.get("setcode", 0), "setcode", errors)

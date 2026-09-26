@@ -37,6 +37,19 @@ class DatabaseTests(unittest.TestCase):
     def write_spec(self):
         (self.root / "card-data/c123.json").write_text(json.dumps(self.spec))
 
+    def test_bitfields_accept_names(self):
+        errors = []
+        cols = db.normalize_card({"id": 1, "type": ["Monster", "Effect", "Tuner"], "race": "warrior",
+                                  "attribute": "LIGHT", "category": ["Search", "Send to Hand", "0x1"]}, errors)
+        self.assertEqual(errors, [])
+        self.assertEqual((cols["type"], cols["race"], cols["attribute"], cols["category"]),
+                         (0x1021, 0x1, 0x10, 0x200 | 0x20 | 0x1))
+        # Tên trong ngoặc được nhận khi không trùng dòng khác.
+        self.assertEqual(db.normalize_card({"id": 1, "type": ["Monster", "Gemini"]}, errors)["type"], 0x801)
+        db.normalize_card({"id": 1, "race": "Dragonn"}, errors)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("RACES", errors[0])
+
     def test_invalid_spec_and_unknown_ids_do_not_overwrite(self):
         self.assertTrue(db.compile_db(self.luna))
         before = self.luna.read_bytes()

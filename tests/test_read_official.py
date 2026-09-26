@@ -27,6 +27,7 @@ from tools.read_official import (
     read_single_card,
     resolve_game_dir,
     search_cards_by_name,
+    search_cards_by_text,
 )
 
 
@@ -213,6 +214,21 @@ class TestReadOfficial(unittest.TestCase):
         matches_dragon = search_cards_by_name("Dragon", cdb_paths)
         self.assertEqual(len(matches_dragon), 1)
         self.assertEqual(matches_dragon[0]["id"], 89631139)
+
+    def test_search_cards_by_text_requires_every_phrase(self):
+        cdb = self.game_dir / "expansions" / "cards.cdb"
+        search = 'If this card is Normal or Special Summoned: You can add 1 "X" Spell/Trap from your Deck to your hand.'
+        self._create_mock_cdb(cdb, [
+            {"id": 1, "name": "Long Searcher", "type": TYPE_MONSTER | TYPE_EFFECT,
+             "desc": search + " You can only use this effect of \"Long Searcher\" once per turn. Also more text."},
+            {"id": 2, "name": "Short Searcher", "type": TYPE_MONSTER | TYPE_EFFECT, "desc": search},
+            {"id": 3, "name": "Short Searcher", "alias": 2, "type": TYPE_MONSTER | TYPE_EFFECT, "desc": search},
+            {"id": 4, "name": "Monster Searcher", "type": TYPE_MONSTER | TYPE_EFFECT,
+             "desc": "If this card is Normal Summoned: You can add 1 monster from your Deck to your hand."},
+        ])
+        matches = search_cards_by_text(["if this card is normal or special summoned", "Spell/Trap from your Deck"], [cdb])
+        # Không phân biệt hoa thường, bỏ reprint (alias), text ngắn đứng trước.
+        self.assertEqual([m["id"] for m in matches], [2, 1])
 
     def test_format_card_type_and_stats(self):
         # Monster Effect Tuner

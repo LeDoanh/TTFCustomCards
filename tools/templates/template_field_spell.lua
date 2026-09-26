@@ -6,6 +6,7 @@
 -- ============================================================
 -- Effect 1: When this card is activated: You can add 1
 --           "<<ARCHETYPE_NAME>>" monster from your Deck to your hand.
+--           You can only activate 1 "<<CARD_NAME>>" per turn.
 -- Effect 2: All "<<ARCHETYPE_NAME>>" monsters you control
 --           gain <<ATK_VALUE>> ATK.
 -- Effect 3: Once per turn, during your Standby Phase:

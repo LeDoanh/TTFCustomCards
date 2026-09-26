@@ -2,11 +2,6 @@
 -- Card Name: <<CARD_NAME>>
 -- Passcode : <<PASSCODE>>
 -- Type     : Monster / Pendulum / Effect
--- Attribute: <<DARK|LIGHT|EARTH|WATER|FIRE|WIND|DIVINE>>
--- Level    : <<LEVEL>>
--- Scale    : <<SCALE>>
--- ATK/DEF  : <<ATK>> / <<DEF>>
--- Race     : <<RACE>>
 -- Archetype: <<ARCHETYPE_NAME>> (0x<<SETCODE>>)
 -- ============================================================
 -- Pendulum Effect:
@@ -14,6 +9,7 @@
 -- Monster Effect:
 --   If this card is Pendulum Summoned: You can add 1
 --   "<<ARCHETYPE_NAME>>" Pendulum Monster from your Deck to your hand.
+--   You can only use this effect of "<<CARD_NAME>>" once per turn.
 -- ============================================================
 
 local s,id=GetID()
@@ -32,7 +28,7 @@ function s.initial_effect(c)
     e1:SetCategory(CATEGORY_DESTROY)
     e1:SetType(EFFECT_TYPE_IGNITION)                       -- Can only activate during your Main Phase
     e1:SetRange(LOCATION_PZONE)                            -- Only while this card is in a Pendulum Zone
-    e1:SetCountLimit(1,id)                                 -- Hard once per turn
+    e1:SetCountLimit(1)                                    -- Soft once per turn (each copy once)
     e1:SetCondition(s.pencon)                              -- Optional: extra condition
     e1:SetCost(s.pencost)                                  -- Optional: cost to pay
     e1:SetTarget(s.pentg_destroy)
@@ -46,8 +42,9 @@ function s.initial_effect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SEARCH+CATEGORY_TOHAND)
     e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)   -- Optional Trigger, responds to this card
+    e2:SetProperty(EFFECT_FLAG_DELAY)                      -- "If" trigger: cannot miss the timing
     e2:SetCode(EVENT_SPSUMMON_SUCCESS)                     -- Fires when this card is Special Summoned
-    e2:SetCountLimit(1,id)
+    e2:SetCountLimit(1,id)                                 -- Hard once per turn
     e2:SetCondition(s.monspcon)                            -- Only when Pendulum Summoned
     e2:SetTarget(s.montg_search)
     e2:SetOperation(s.monop_search)

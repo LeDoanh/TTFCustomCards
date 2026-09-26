@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	--Cannot be Set
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_CANNOT_SET)
+	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
 	--Your turn: Normal Spell activation
@@ -107,7 +107,7 @@ function s.selfop(e,tp,eg,ep,ev,re,r,rp)
 	if #g==0 then return end
 	Duel.ConfirmCards(tp,g)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local sg=g:FilterSelect(tp,Card.IsAbleToRemove,1,1,nil,POS_FACEDOWN)
+	local sg=g:FilterSelect(tp,Card.IsAbleToRemove,1,1,nil,tp,POS_FACEDOWN)
 	if #sg>0 and Duel.Remove(sg,POS_FACEDOWN,REASON_EFFECT)>0 then
 		local thg=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_DECK,0,nil)
 		if #thg>0 then

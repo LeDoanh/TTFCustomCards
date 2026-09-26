@@ -115,6 +115,7 @@ Card.GetBattledGroup
 Card.GetBattledGroupCount
 Card.GetBinClassCount
 Card.GetBitwiseOr
+Card.GetCardAttack
 Card.GetCardAttribute
 Card.GetCardControler
 Card.GetCardEffect
@@ -683,6 +684,7 @@ Card.UseCountLimit
 Card.WasMaximumMode
 Card.WasMaximumModeCenter
 Card.WasMaximumModeSide
+Card.getAttack
 Card.ritual_custom_condition
 Card.ritual_custom_operation
 Chain.CanTarget
@@ -1011,6 +1013,7 @@ Duel.GetBattledGroup
 Duel.GetBattledGroupCount
 Duel.GetBinClassCount
 Duel.GetBitwiseOr
+Duel.GetCardAttack
 Duel.GetCardAttribute
 Duel.GetCardControler
 Duel.GetCardEffect
@@ -1703,6 +1706,7 @@ Duel.WasMaximumMode
 Duel.WasMaximumModeSide
 Duel.Win
 Duel.XyzSummon
+Duel.getAttack
 Duel.ritual_custom_condition
 Duel.ritual_custom_operation
 Effect.AddCannotBeNormalSummoned
@@ -2336,6 +2340,7 @@ Effect.UpdateScale
 Effect.UseCountLimit
 Effect.WasMaximumMode
 Effect.WasMaximumModeSide
+Effect.getAttack
 Effect.ritual_custom_condition
 Effect.ritual_custom_operation
 Fusion.AddContactProc
@@ -2509,6 +2514,7 @@ Group.GetBattledGroup
 Group.GetBattledGroupCount
 Group.GetBinClassCount
 Group.GetBitwiseOr
+Group.GetCardAttack
 Group.GetCardAttribute
 Group.GetCardControler
 Group.GetCardEffect
@@ -3019,6 +3025,7 @@ Group.UseCountLimit
 Group.WasMaximumMode
 Group.WasMaximumModeSide
 Group.__tostring
+Group.getAttack
 Group.ritual_custom_condition
 Group.ritual_custom_operation
 Infernoid.RegisterSummonProcedure

@@ -29,8 +29,3 @@ plans/
 
 # Official references (dev machine only)
 docs/official-reference/
-
-# Resource
-docs/Resources
-# Local CDB backups
-backups/

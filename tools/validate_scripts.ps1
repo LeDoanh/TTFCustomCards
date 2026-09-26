@@ -3,12 +3,11 @@
     EDOPro Card Script Validator — Kiểm tra Lua script tự động
 .DESCRIPTION
     Quét tất cả file .lua trong thư mục script/ và kiểm tra:
-    - Cú pháp Lua hợp lệ (gọi Lua parser)
-    - Có function initial_effect
-    - Có gọi GetID()
-    - Có RegisterEffect
-    - Mỗi Effect.CreateEffect có SetType và SetCode
-    - SetTarget có check chk==0
+    - FAIL: cú pháp Lua (gọi Lua parser)
+    - FAIL STRUCT: thiếu initial_effect, GetID() hoặc RegisterEffect
+    - FAIL CONST/API: hằng số hoặc hàm không có trong tools/edopro_constants.txt, tools/edopro_apis.txt
+    - FAIL DEPEND: dùng định danh của script/constants.lua mà không Duel.LoadScript("constants.lua")
+    - WARN STRUCT (heuristic): SetTarget thiếu chk==0, operation dùng GetHandler() không có IsRelateToEffect
 .PARAMETER Path
     Đường dẫn file .lua cụ thể để kiểm tra. Nếu không chỉ định, quét toàn bộ script/
 .PARAMETER Quiet
