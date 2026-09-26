@@ -31,6 +31,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x3b}
 s.listed_names={74677422}
+
 function s.setfilter(c)
 	return c:IsSetCard(0x3b) and c:IsSpellTrap() and c:IsSSetable()
 end
@@ -88,11 +89,19 @@ function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_DECK,0,1,1,nil)
 	Duel.SendtoGrave(g,REASON_COST)
 end
+
+-- ==========================================================
+-- HÀM LỌC MỚI THAY THẾ AUX.DISFILTER3
+-- ==========================================================
+function s.negfilter(c)
+	return c:IsFaceup() and c:IsType(TYPE_EFFECT) and c:IsNegatable()
+end
+
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and aux.disfilter3(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(aux.disfilter3,tp,0,LOCATION_MZONE,1,nil) end
+	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and s.negfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.negfilter,tp,0,LOCATION_MZONE,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_NEGATE)
-	local g=Duel.SelectTarget(tp,aux.disfilter3,tp,0,LOCATION_MZONE,1,1,nil)
+	local g=Duel.SelectTarget(tp,s.negfilter,tp,0,LOCATION_MZONE,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_DISABLE,g,1,0,0)
 end
 function s.fusval(e,c)
@@ -103,7 +112,8 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and not tc:IsDisabled() then
+	-- Cập nhật not tc:IsDisabled() thành tc:IsNegatable()
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:IsNegatable() then
 		Duel.NegateRelatedChain(tc,RESET_TURN_SET)
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
