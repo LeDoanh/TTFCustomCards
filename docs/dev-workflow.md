@@ -21,6 +21,8 @@ Mỗi engine có một nhánh `engine/<Engine>` (ví dụ `engine/Labrynth`, `en
 
 Nhánh `fix/`, `chore/`, `hotfix/` ngắn hạn: merge xong không dùng lại. Mọi nhánh được giữ trên GitHub sau merge (không bật tự xóa nhánh); engine làm xong thì chủ repo xóa tay nhánh `engine/` của nó.
 
+Dev (quyền Write) không push thẳng được vào `master` và `develop`. Chủ repo có quyền bypass nên push thẳng được, dùng cho sửa tài liệu hoặc hotfix gấp; thay đổi của dev và bản phát hành vẫn đi qua PR để có review và CI.
+
 Giữ `master` làm default branch trên GitHub: clone mới của EDOPro nhận nhánh mặc định, đổi sang `develop` thì người chơi mới sẽ nhận bản chưa phát hành.
 
 ## 2. Phân bổ engine
@@ -239,7 +241,7 @@ Bản đã phát hành chỉ nhận thay đổi này qua kỳ phát hành kế t
 
 Repo đang public nên GitHub Actions trên runner chuẩn miễn phí; chuyển sang private thì gói Free có 2.000 phút mỗi tháng, và CI ở mục 10 đã giữ số lần chạy ở mức thấp.
 
-1. Commit toàn bộ thay đổi hiện có (tài liệu, `.github/workflows/ci.yml`, `.github/CODEOWNERS`, `tools/pin_game_branch.ps1`, `tools/validate_scripts.ps1`) và push thẳng lên `master`. Đây là lần push thẳng cuối, làm **trước** khi bật ruleset ở bước 5. `CODEOWNERS` phải có trên nhánh đích của PR mới có tác dụng, nên tạo `develop` (bước 2) sau bước này. GitHub Desktop: tick các file ở tab Changes -> "Commit to master" -> "Push origin".
+1. Commit toàn bộ thay đổi hiện có (tài liệu, `.github/workflows/ci.yml`, `.github/CODEOWNERS`, `tools/pin_game_branch.ps1`, `tools/validate_scripts.ps1`) và push thẳng lên `master`. Làm **trước** khi bật ruleset ở bước 5, để ruleset không chặn lần push này. `CODEOWNERS` phải có trên nhánh đích của PR mới có tác dụng, nên tạo `develop` (bước 2) sau bước này. GitHub Desktop: tick các file ở tab Changes -> "Commit to master" -> "Push origin".
 2. Tạo `develop` từ `master` và tag mốc đầu:
 
 ```powershell
@@ -255,10 +257,10 @@ GitHub Desktop tạo được `develop`: Current Branch -> New Branch -> tên `d
 4. Settings -> General -> Pull Requests (đây là một đoạn trên trang General, kéo xuống, không phải mục trong sidebar): bật "Allow merge commits", tắt "Allow rebase merging", tắt "Automatically delete head branches" (giữ nhánh sau merge). "Allow squash merging" để bật hay tắt đều được, vì ruleset ở bước 5 chỉ cho Merge.
 5. Settings -> Rules -> Rulesets -> New ruleset -> New branch ruleset. Một ruleset tên `protect-branches` với hai target: Add target -> Include by pattern, lần lượt `develop` và `master`.
 
-Cấu hình: Enforcement status **Active**; Bypass list -> Add bypass -> Repository admin, rồi bấm dấu ba chấm cạnh "Always allow" chọn **For pull requests only** (chủ repo vẫn phải qua PR nhưng tự merge được PR của mình, không push thẳng được); bật "Restrict deletions", "Block force pushes", "Require a pull request before merging" với Required approvals = 1, **"Require review from Code Owners"** và Allowed merge methods chỉ chọn **Merge**. Không thêm "Require status checks" (mục 6). File `.github/CODEOWNERS` (`* @LeDoanh`, đã có trong repo từ bước 1) làm cho mọi file thuộc chủ repo, nên PR của dev chỉ merge được sau khi chủ repo approve; approve của collaborator khác không tính. PR của chính chủ repo không tự approve được, đã có quyền bypass "For pull requests only" ở trên lo phần này.
+Cấu hình: Enforcement status **Active**; Bypass list -> Add bypass -> Repository admin, giữ **Always allow** (chủ repo bypass mọi luật của ruleset: push thẳng, tự merge PR của mình, và cả force-push hay xóa nhánh nếu cố ý; dev Write vẫn bị chặn). Muốn chủ repo cũng phải qua PR thì bấm dấu ba chấm cạnh "Always allow" chọn **For pull requests only**: khi đó chủ repo tự merge được PR của mình nhưng không push thẳng được; bật "Restrict deletions", "Block force pushes", "Require a pull request before merging" với Required approvals = 1, **"Require review from Code Owners"** và Allowed merge methods chỉ chọn **Merge**. Không thêm "Require status checks" (mục 6). File `.github/CODEOWNERS` (`* @LeDoanh`, đã có trong repo từ bước 1) làm cho mọi file thuộc chủ repo, nên PR của dev chỉ merge được sau khi chủ repo approve; approve của collaborator khác không tính. PR của chính chủ repo không tự approve được; quyền bypass của chủ repo lo phần này.
 
 6. Settings -> General -> Default branch: giữ `master` (mục 1).
-7. Chạy thử CI trước khi mời dev: Actions -> CI -> Run workflow (nhánh `master`). Phải xanh. Workflow chưa từng chạy trên runner thật, nên bước này là bài kiểm tra đầu tiên; đỏ ở bước "Validate Lua scripts" thì gửi log để sửa.
+7. Chạy thử CI trước khi mời dev: Actions -> CI -> Run workflow (nhánh `master`). Phải xanh (lần thiết lập đầu đã chạy xanh trên runner thật); đỏ thì mở bước bị lỗi trong log, thường là "Validate Lua scripts".
 8. Chạy thử ghim nhánh: tạo nhánh tạm từ `develop`, push, chạy `pin_game_branch.ps1` (mục 4.2), mở EDOPro và xác nhận game kéo đúng nhánh; rồi `-Unpin` và xóa nhánh tạm.
 
 ## 10. CI

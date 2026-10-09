@@ -4,7 +4,7 @@
 
 ## Git
 
-- Đây là repo gốc (`origin` = `LeDoanh/TTFCustomCards`), không còn là fork của repo nào. **`master`** là bản phát hành mà EDOPro của người chơi tự kéo; **`develop`** là nhánh tích hợp. Không push thẳng vào hai nhánh này: làm trên nhánh `engine/<Engine>` của engine được phân bổ cho mình (hoặc `fix/`, `chore/`), tách từ `develop`, push nhánh (`git push -u origin HEAD`) rồi PR vào `develop`, merge bằng Merge commit; phân bổ, test trên nhánh, PR và phát hành theo phiên bản xem `docs/dev-workflow.md`.
+- Đây là repo gốc (`origin` = `LeDoanh/TTFCustomCards`), không còn là fork của repo nào. **`master`** là bản phát hành mà EDOPro của người chơi tự kéo; **`develop`** là nhánh tích hợp. Không push thẳng vào hai nhánh này (chủ repo có quyền bypass, chỉ push thẳng khi chủ repo yêu cầu rõ): làm trên nhánh `engine/<Engine>` của engine được phân bổ cho mình (hoặc `fix/`, `chore/`), tách từ `develop`, push nhánh (`git push -u origin HEAD`) rồi PR vào `develop`, merge bằng Merge commit; phân bổ, test trên nhánh, PR và phát hành theo phiên bản xem `docs/dev-workflow.md`.
 - Chỉ commit/push khi được yêu cầu. Gom JSON, Lua, artwork và `cdb/card-data.cdb` của cùng một thay đổi. Format: `[<Git user>] [Fix|Feature|Refactor|Chore]: <English description>`.
 - Git diff/log là lịch sử thay đổi; không viết nhật ký phiên.
 
