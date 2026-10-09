@@ -4,15 +4,16 @@
 
 ## Git
 
-- Nhánh chính của repo là **`master`** (đồng bộ với `upstream/master`). Không tạo feature branch: commit rồi push thẳng lên `origin/master` (đang ở worktree thì `git push origin HEAD:master`). Chỉ mở Pull Request sang repo gốc khi được yêu cầu; PR mở từ `LeDoanh:master`, nên commit mới trên `master` tự vào PR đang mở.
-- Chỉ commit/push khi được yêu cầu. Gom JSON, Lua, artwork và `card-data.cdb` của cùng một thay đổi. Format: `[<Git user>] [Fix|Feature|Refactor|Chore]: <English description>`.
+- Đây là repo gốc (`origin` = `LeDoanh/TTFCustomCards`), không còn là fork của repo nào. Nhánh chính là **`master`**. Không tạo feature branch: commit rồi push thẳng lên `origin/master` (đang ở worktree thì `git push origin HEAD:master`).
+- Chỉ commit/push khi được yêu cầu. Gom JSON, Lua, artwork và `cdb/card-data.cdb` của cùng một thay đổi. Format: `[<Git user>] [Fix|Feature|Refactor|Chore]: <English description>`.
 - Git diff/log là lịch sử thay đổi; không viết nhật ký phiên.
 
 ## Nguồn dữ liệu và ranh giới
 
-- `card-data/c<ID>.json`: nguồn dữ liệu cho card được quản lý bằng specs; compiler sinh **`card-data.cdb`**. Sửa JSON rồi compile, không sửa CDB bằng editor.
+- `card-data/c<ID>.json`: nguồn dữ liệu cho card được quản lý bằng specs; compiler sinh **`cdb/card-data.cdb`**. Sửa JSON rồi compile, không sửa CDB bằng editor.
 - `script/c<ID>.lua`: code chạy trong game. `tools/`: công cụ phát triển và templates, không phải script game.
-- Mọi `*.cdb` khác ở gốc repo (`custom_cards_zesty.cdb`, `mycard.cdb` và các CDB cộng đồng) là dữ liệu của dev khác. Không ghi đè hoặc giải quyết conflict bằng chọn cả file ours/theirs.
+- `cdb/` chứa mọi `*.cdb` và `strings.conf`: EDOPro chỉ nạp chúng từ đây khi config repo trong game đặt `"data_path": "cdb"` (xem `README.md`). CDB mới phải đặt trong `cdb/`, không đặt ở gốc repo.
+- Mọi `*.cdb` khác trong `cdb/` (`custom_cards_zesty.cdb`, `mycard.cdb` và các CDB cộng đồng) là dữ liệu của dev khác. Không ghi đè hoặc giải quyết conflict bằng chọn cả file ours/theirs.
 - Không sửa card của dev khác trừ khi được yêu cầu. Quét toàn bộ `script/` sẽ gặp FAIL ở script của họ; lỗi đó không chặn card đang làm.
 - `feature_list.json`: hàng đợi và trạng thái; dùng `tools/manage_harness.py` để thay đổi, không chỉnh thủ công.
 
@@ -20,7 +21,7 @@
 
 1. Chốt effect text và các tình huống cần test (`docs/agent-workflow.md` §1).
 2. Tìm official card cùng cơ chế: `python tools/read_official.py --text "<cụm trong effect>"` rồi `python tools/read_official.py <ID>` để lấy script. Ghi card ID, effect/function tham khảo và phần khác biệt. Không lấy custom card cũ làm bằng chứng API đúng.
-3. Archetype chưa đăng ký: `python tools/manage_harness.py archetype add <Name> [<setcode>]`; official thì truyền setcode tra trong `repositories/delta-bagooska/script/archetype_setcode_constants.lua` của bản cài game, fan-made thì bỏ trống để tool chọn setcode và ghi `constants.lua`/`strings.conf`. Tạo card: `python tools/manage_harness.py start <ID> "<name>" <template>`. Template chỉ là khung, xóa hiệu ứng mẫu không thuộc yêu cầu.
+3. Archetype chưa đăng ký: `python tools/manage_harness.py archetype add <Name> [<setcode>]`; official thì truyền setcode tra trong `repositories/delta-bagooska/script/archetype_setcode_constants.lua` của bản cài game, fan-made thì bỏ trống để tool chọn setcode và ghi `script/constants.lua` và `cdb/strings.conf`. Tạo card: `python tools/manage_harness.py start <ID> "<name>" <template>`. Template chỉ là khung, xóa hiệu ứng mẫu không thuộc yêu cầu.
 4. Sửa JSON và Lua; đối chiếu từng effect với `docs/agent-rules.md`. Không bịa API, không suy ra timing từ tên hàm.
 5. `python tools/manage_harness.py verify <ID>`; exit code phải là 0. Đây là kiểm tra **tĩnh**, không chứng minh hiệu ứng chạy đúng.
 6. `powershell -File tools/sync_game.ps1 -CardId <ID>`, rồi duel bằng deck `test_<ID>` theo ma trận kịch bản trong `docs/game-testing-workflow.md`.

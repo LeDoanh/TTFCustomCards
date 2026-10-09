@@ -371,7 +371,7 @@ def fix_mismatch_renames(issues: list[ImageIssue], dry_run: bool = True) -> tupl
 def sync_to_game(pics_dir: Path, game_dir: Path, clean_pngs: bool = False) -> list[str]:
     """Đồng bộ các file ảnh sang game và dọn dẹp file cũ."""
     logs: list[str] = []
-    game_pics = game_dir / "repositories" / "custom_cards_zesty" / "pics"
+    game_pics = game_dir / "repositories" / "ttf-custom-cards" / "pics"
     if not game_pics.exists():
         logs.append(f"[WARN] Không tìm thấy thư mục ảnh trong game: {game_pics}")
         return logs

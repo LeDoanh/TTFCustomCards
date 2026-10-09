@@ -27,7 +27,7 @@ python tools/manage_harness.py archetype add <Name>             # fan-made mới
 python tools/manage_harness.py archetype add <Name> <setcode>   # archetype official hoặc setcode đã chốt
 ```
 
-Tool đối chiếu setcode với `archetype_setcode_constants.lua` của bản cài game: setcode official chỉ được đăng ký; setcode fan-made được kiểm tra trùng (12 bit thấp với official, tên khác trong `script/constants.lua`/`strings.conf`) rồi tự ghi `SET_*` và `!setname` vào hai file đó. Output ghi rõ hằng `SET_*` dùng trong Lua. Range mặc định là `setcode * 100000 + 1` đến `+ 99999` (vd `0x16e` -> `36600001-36699999`); lệnh từ chối khi trùng tên, trùng setcode hoặc chồng range. `--range <start>-<end>` dùng khi passcode vượt 9 chữ số.
+Tool đối chiếu setcode với `archetype_setcode_constants.lua` của bản cài game: setcode official chỉ được đăng ký; setcode fan-made được kiểm tra trùng (12 bit thấp với official, tên khác trong `script/constants.lua`/`cdb/strings.conf`) rồi tự ghi `SET_*` và `!setname` vào hai file đó. Output ghi rõ hằng `SET_*` dùng trong Lua. Range mặc định là `setcode * 100000 + 1` đến `+ 99999` (vd `0x16e` -> `36600001-36699999`); lệnh từ chối khi trùng tên, trùng setcode hoặc chồng range. `--range <start>-<end>` dùng khi passcode vượt 9 chữ số.
 
 Tạo card theo một trong hai cách:
 
@@ -45,7 +45,7 @@ python tools/manage_db.py validate
 python tools/manage_harness.py verify <ID>
 ```
 
-`validate` kiểm tra specs mà không ghi CDB, dùng trong lúc đang sửa JSON. `verify` là cổng bắt buộc: chạy preflight (file, placeholder, artwork), compile `card-data.cdb`, validate Lua và check-sync rồi cập nhật queue; thứ tự nằm ở `verify_card` trong `tools/manage_harness.py`. Kiểm tra exit code:
+`validate` kiểm tra specs mà không ghi CDB, dùng trong lúc đang sửa JSON. `verify` là cổng bắt buộc: chạy preflight (file, placeholder, artwork), compile `cdb/card-data.cdb`, validate Lua và check-sync rồi cập nhật queue; thứ tự nằm ở `verify_card` trong `tools/manage_harness.py`. Kiểm tra exit code:
 
 - FAIL của validator (`CONST:`, `API:`, `DEPEND:`, cú pháp) chặn verify; sửa theo tên thật trong engine.
 - WARN `STRUCT:` không chặn. Đây là heuristic: xem lại theo official reference, không sửa máy móc chỉ để hết cảnh báo (ví dụ `IsRelateToEffect`, xem `docs/agent-rules.md` §1).
@@ -53,7 +53,7 @@ python tools/manage_harness.py verify <ID>
 
 ### Trùng passcode giữa các CDB
 
-`validate` và `compile` đối chiếu mọi ID trong `card-data/` với mọi `*.cdb` khác ở gốc repo và toàn bộ `*.cdb` của bản cài EDOPro; trùng là ERROR và chặn biên dịch (quy tắc tại `docs/agent-rules.md` §2.1). `scan` dùng cùng nguồn đó để không cấp passcode đã có người dùng.
+`validate` và `compile` đối chiếu mọi ID trong `card-data/` với mọi `*.cdb` khác trong `cdb/` và toàn bộ `*.cdb` của bản cài EDOPro; trùng là ERROR và chặn biên dịch (quy tắc tại `docs/agent-rules.md` §2.1). `scan` dùng cùng nguồn đó để không cấp passcode đã có người dùng.
 
 CDB trong game trùng tên file với CDB của repo bị bỏ qua — đó là bản phân phối của chính repo này. Thư mục game đọc từ `$EDOPRO_DIR`, mặc định `F:/Game/ProjectIgnis`; không thấy thì chỉ còn đối chiếu CDB trong repo và tool báo warning, lúc đó phải tự kiểm tra trước khi phát hành.
 
@@ -82,4 +82,4 @@ Sau khi các bước tĩnh đạt, `verify` copy ảnh queue thành `pics/<ID>.j
 
 ## 6. Trước khi commit
 
-Review `git diff --check` và `git diff --stat`. Thay đổi CDB theo `docs/agent-rules.md` §3.4. Quy tắc nhánh, commit và PR nằm trong `AGENTS.md`.
+Review `git diff --check` và `git diff --stat`. Thay đổi CDB theo `docs/agent-rules.md` §3.4. Quy tắc nhánh và commit nằm trong `AGENTS.md`.

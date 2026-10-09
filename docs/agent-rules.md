@@ -26,14 +26,14 @@ Giữ nguyên passcode hiện hữu. Card mới dùng range đã đăng ký tron
 Cả hai loại phải được đăng ký bằng `python tools/manage_harness.py archetype add` trước khi cấp passcode (`docs/agent-workflow.md` §3).
 
 - **Official** (Dragonmaid, Labrynth, White Forest, Witchcrafter, Branded...): truyền setcode tra trong `repositories/delta-bagooska/script/archetype_setcode_constants.lua` của bản cài game (không có game thì xem file cùng tên trong CardScripts, §5). Dùng hằng `SET_*` official trong Lua; EDOPro đã có sẵn, **không thêm vào `script/constants.lua`**.
-- **Fan-made**: bỏ trống setcode để tool chọn setcode trống và ghi `SET_XXX = 0xYYY` vào [script/constants.lua](../script/constants.lua), `!setname 0xYYY TênArchetype` vào [strings.conf](../strings.conf). Script dùng `SET_XXX` phải có `Duel.LoadScript("constants.lua")`.
+- **Fan-made**: bỏ trống setcode để tool chọn setcode trống và ghi `SET_XXX = 0xYYY` vào [script/constants.lua](../script/constants.lua), `!setname 0xYYY TênArchetype` vào [cdb/strings.conf](../cdb/strings.conf). Script dùng `SET_XXX` phải có `Duel.LoadScript("constants.lua")`.
 - EDOPro so setcode theo 12 bit thấp: `0x1004` là archetype con của `0x4` (Amazoness). Setcode fan-made không được trùng 12 bit thấp với archetype official.
 
 ## 3. CDB
 
 ### 3.1 Schema
 
-`card-data/c<passcode>.json` là nguồn dữ liệu duy nhất; `tools/manage_db.py` biên dịch toàn bộ specs vào `card-data.cdb` theo schema và cách đóng gói của Datacorn (editor CDB của ProjectIgnis).
+`card-data/c<passcode>.json` là nguồn dữ liệu duy nhất; `tools/manage_db.py` biên dịch toàn bộ specs vào `cdb/card-data.cdb` theo schema và cách đóng gói của Datacorn (editor CDB của ProjectIgnis).
 
 - **Bảng `datas`:**
   - `id`: passcode, phải khớp tên file.
@@ -74,9 +74,9 @@ python tools/manage_db.py query <ID-or-name>
 
 ### 3.4 Ownership và làm việc nhóm
 
-- Mọi `*.cdb` khác ở gốc repo là dữ liệu của dev khác; compiler không ghi vào đó nhưng đối chiếu passcode với tất cả.
-- Commit JSON + Lua/artwork liên quan + `card-data.cdb` sinh từ cùng phiên bản nguồn.
-- Conflict ở `card-data.cdb`: giải quyết JSON trước rồi compile lại. Không chọn cả file ours/theirs.
+- Mọi `*.cdb` khác trong `cdb/` là dữ liệu của dev khác; compiler không ghi vào đó nhưng đối chiếu passcode với tất cả. CDB phải nằm trong `cdb/` vì EDOPro chỉ nạp từ `data_path` của repo (README).
+- Commit JSON + Lua/artwork liên quan + `cdb/card-data.cdb` sinh từ cùng phiên bản nguồn.
+- Conflict ở `cdb/card-data.cdb`: giải quyết JSON trước rồi compile lại. Không chọn cả file ours/theirs.
 - Chuyển card từ CDB khác vào `card-data/`: thống nhất ownership, viết spec, rồi bỏ ID đó khỏi CDB cũ. Không trông vào thứ tự nạp của client để giải quyết trùng ID.
 - Bỏ một card phải xóa rõ ràng ở cả JSON và CDB đích.
 

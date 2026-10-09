@@ -19,7 +19,7 @@ if (-not (Test-Path $GameDir)) {
     exit 1
 }
 
-$repoDest = Join-Path $GameDir "repositories\custom_cards_zesty"
+$repoDest = Join-Path $GameDir "repositories\ttf-custom-cards"
 if (-not (Test-Path $repoDest)) {
     Write-Host "[INFO] Tao thu muc repo custom trong game: $repoDest" -ForegroundColor Yellow
     New-Item -ItemType Directory -Path $repoDest -Force | Out-Null
@@ -71,17 +71,26 @@ if ($CardId -ne "") {
 
 # 2. Sync CDBs
 Write-Host "`n[2/4] Dong bo database CDB..." -ForegroundColor Yellow
-# Moi *.cdb o goc repo deu duoc game nap, ke ca CDB cong dong moi them
-foreach ($cdb in Get-ChildItem -Path $root -Filter "*.cdb" -File) {
-    Copy-Item $cdb.FullName $repoDest -Force
+# EDOPro chi nap *.cdb va strings.conf trong data_path cua repo (config game: "data_path": "cdb"),
+# nen ca hai deu dong bo vao cdb\. Moi *.cdb trong cdb\ deu duoc nap, ke ca CDB cong dong moi them
+$cdbSrc = Join-Path $root "cdb"
+$cdbDest = Join-Path $repoDest "cdb"
+if (-not (Test-Path $cdbDest)) { New-Item -ItemType Directory -Path $cdbDest -Force | Out-Null }
+foreach ($cdb in Get-ChildItem -Path $cdbSrc -Filter "*.cdb" -File) {
+    Copy-Item $cdb.FullName $cdbDest -Force
     Write-Host "  -> Da copy $($cdb.Name)" -ForegroundColor Green
+    # Ban cu o goc repo trong game khong con duoc nap, xoa de khong gay nham lan
+    $stale = Join-Path $repoDest $cdb.Name
+    if (Test-Path $stale) { Remove-Item $stale -Force }
 }
 
 # Dong bo strings.conf neu co
-$srcStrings = Join-Path $root "strings.conf"
+$srcStrings = Join-Path $cdbSrc "strings.conf"
 if (Test-Path $srcStrings) {
-    Copy-Item $srcStrings $repoDest -Force
+    Copy-Item $srcStrings $cdbDest -Force
     Write-Host "  -> Da copy strings.conf" -ForegroundColor Green
+    $staleStrings = Join-Path $repoDest "strings.conf"
+    if (Test-Path $staleStrings) { Remove-Item $staleStrings -Force }
 }
 
 # 3. Sync Pics

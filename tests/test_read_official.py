@@ -157,7 +157,7 @@ class TestReadOfficial(unittest.TestCase):
     def test_collect_cdb_paths(self):
         delta_cdb = self.game_dir / "repositories" / "delta-bagooska" / "cards.delta.cdb"
         exp_cdb = self.game_dir / "expansions" / "cards.cdb"
-        custom_cdb = self.game_dir / "repositories" / "custom_cards_zesty" / "custom.cdb"
+        custom_cdb = self.game_dir / "repositories" / "ttf-custom-cards" / "custom.cdb"
 
         self._create_mock_cdb(delta_cdb, [])
         self._create_mock_cdb(exp_cdb, [])
@@ -166,7 +166,7 @@ class TestReadOfficial(unittest.TestCase):
         cdbs = collect_cdb_paths(self.game_dir)
         self.assertIn(delta_cdb.resolve(), cdbs)
         self.assertIn(exp_cdb.resolve(), cdbs)
-        # Không được chứa custom_cards_zesty
+        # Không được chứa ttf-custom-cards
         self.assertNotIn(custom_cdb.resolve(), cdbs)
 
     def test_query_card_info_and_search(self):

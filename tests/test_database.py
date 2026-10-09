@@ -32,7 +32,8 @@ class DatabaseTests(unittest.TestCase):
         (self.root / "script/c123.lua").write_text("local s,id=GetID()")
         (self.root / "feature_list.json").write_text(json.dumps({"archetypes": {"A": {"cards": [
             {"passcode": "123", "status": "done"}, {"passcode": "555", "status": "pending"}]}}}))
-        self.luna = self.root / "card-data.cdb"
+        (self.root / "cdb").mkdir()
+        self.luna = self.root / "cdb/card-data.cdb"
 
     def write_spec(self):
         (self.root / "card-data/c123.json").write_text(json.dumps(self.spec))
@@ -82,8 +83,8 @@ class DatabaseTests(unittest.TestCase):
 
     def test_passcode_collision_blocks_validate_and_compile(self):
         # ID trùng ở CDB khác làm EDOPro nạp nhầm card mà không báo gì. Tên CDB
-        # tùy ý: mọi *.cdb ở gốc repo đều phải được đối chiếu.
-        sibling = self.root / "New Community.cdb"
+        # tùy ý: mọi *.cdb trong cdb/ đều phải được đối chiếu.
+        sibling = self.root / "cdb/New Community.cdb"
         with contextlib.closing(sqlite3.connect(sibling)) as conn, conn:
             conn.execute("CREATE TABLE datas (id INTEGER PRIMARY KEY)")
             conn.execute("INSERT INTO datas VALUES (123)")

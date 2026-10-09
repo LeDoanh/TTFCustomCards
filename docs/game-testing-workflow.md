@@ -11,13 +11,13 @@ powershell -File .\tools\sync_game.ps1
 
 Lệnh đầu dành cho một card, lệnh sau đồng bộ toàn repo. Thêm `-GameDir "<đường dẫn>"` nếu game không ở vị trí mặc định.
 
-Tool ghi vào `repositories/custom_cards_zesty/` trong thư mục game: mọi `*.cdb` ở gốc repo và `strings.conf`, cùng script và ảnh. Với `-CardId`, tool chỉ copy script/ảnh của card đó và các card cùng archetype trong `feature_list.json` (trừ nhóm `Common`) cùng `script/constants.lua`, rồi tạo `deck/test_<ID>.ydk` gồm 3 bản card cần test và 1 bản mỗi card cùng archetype; Fusion/Synchro/Xyz/Link vào Extra Deck theo `type` trong `card-data/`. Deck chỉ là điểm xuất phát: thêm card đối thủ, hand trap hoặc card tương tác mà kịch bản cần trong Deck Edit. Khởi động lại EDOPro sau khi sync.
+Tool ghi vào `repositories/ttf-custom-cards/` trong thư mục game: mọi `*.cdb` và `strings.conf` trong `cdb/` (vào `cdb/` của bản clone; mục repo trong `config/configs.json` của game phải có `"repo_path": "./repositories/ttf-custom-cards"` và `"data_path": "cdb"`, xem README), cùng script và ảnh. Với `-CardId`, tool chỉ copy script/ảnh của card đó và các card cùng archetype trong `feature_list.json` (trừ nhóm `Common`) cùng `script/constants.lua`, rồi tạo `deck/test_<ID>.ydk` gồm 3 bản card cần test và 1 bản mỗi card cùng archetype; Fusion/Synchro/Xyz/Link vào Extra Deck theo `type` trong `card-data/`. Deck chỉ là điểm xuất phát: thêm card đối thủ, hand trap hoặc card tương tác mà kịch bản cần trong Deck Edit. Khởi động lại EDOPro sau khi sync.
 
-> **Git trong thư mục game**: `repositories\custom_cards_zesty` nếu là clone Git thì phải ở nhánh `master` đồng bộ với repo chính. Nếu EDOPro báo lỗi cập nhật repository qua mạng hoặc bị kẹt ở nhánh `main` cũ, `sync_game.ps1` ghi đè trực tiếp các file mới nhất từ workspace vào game để test ngay.
+> **Git trong thư mục game**: `repositories\ttf-custom-cards` nếu là clone Git thì phải ở nhánh `master` đồng bộ với repo chính. Nếu EDOPro báo lỗi cập nhật repository qua mạng hoặc bị kẹt ở nhánh `main` cũ, `sync_game.ps1` ghi đè trực tiếp các file mới nhất từ workspace vào game để test ngay.
 
 ## 2. Kiểm tra hiển thị
 
-Mở **Deck Edit**, chọn deck `test_<ID>`: đối chiếu tên, artwork, stats, text và tên archetype (`strings.conf`) với JSON. Ảnh trống hoặc game văng `JPEG FATAL ERROR` thì chuẩn hóa artwork theo `docs/agent-workflow.md` §5.
+Mở **Deck Edit**, chọn deck `test_<ID>`: đối chiếu tên, artwork, stats, text và tên archetype (`cdb/strings.conf`) với JSON. Ảnh trống hoặc game văng `JPEG FATAL ERROR` thì chuẩn hóa artwork theo `docs/agent-workflow.md` §5.
 
 ## 3. Duel
 

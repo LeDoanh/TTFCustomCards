@@ -195,9 +195,9 @@ def collect_cdb_paths(game_dir):
     # 3. Base cards.cdb
     add_cdb(game_dir / "cards.cdb")
 
-    # 4. Các CDB khác trong game (loại trừ custom_cards_zesty)
+    # 4. Các CDB khác trong game (loại trừ ttf-custom-cards)
     for p in sorted(game_dir.rglob("*.cdb")):
-        if "custom_cards_zesty" not in p.parts:
+        if "ttf-custom-cards" not in p.parts:
             add_cdb(p)
 
     return cdbs

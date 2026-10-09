@@ -138,8 +138,18 @@ TEXTS_TABLE_FIELDS = ("desc0,id1,name0,str10,str100,str110,str120,str130,str140,
                       "str160,str20,str30,str40,str50,str60,str70,str80,str90")
 
 
+# EDOPro chỉ nạp *.cdb và strings.conf trong data_path của repo (không đệ quy),
+# nên mọi CDB nằm cùng một thư mục này và config game đặt data_path = "cdb".
+CDB_DIR = "cdb"
+
+
 def get_db_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "card-data.cdb"
+    return Path(__file__).resolve().parent.parent / CDB_DIR / "card-data.cdb"
+
+
+def project_root_of(db_path: Path) -> Path:
+    """Gốc repo chứa card-data/, script/, feature_list.json của CDB do compiler sinh."""
+    return db_path.parent.parent
 
 
 # ============================================================
@@ -150,12 +160,12 @@ DEFAULT_EDOPRO_DIR = "F:/Game/ProjectIgnis"
 
 
 def sibling_cdb_paths(root: Path):
-    """CDB ở gốc repo thuộc luồng dữ liệu khác (docs/agent-rules.md §3.4).
+    """CDB trong cdb/ thuộc luồng dữ liệu khác (docs/agent-rules.md §3.4).
 
     Là mọi *.cdb trừ CDB do compiler sinh, để CDB cộng đồng mới thêm vào repo
     tự được đối chiếu passcode mà không phải sửa danh sách.
     """
-    return sorted(p for p in root.glob("*.cdb") if p.name != get_db_path().name)
+    return sorted(p for p in (root / CDB_DIR).glob("*.cdb") if p.name != get_db_path().name)
 
 
 def read_ids(path: Path):
@@ -206,7 +216,7 @@ def check_passcode_collisions(root: Path, owned_ids):
         except sqlite3.Error as exc:
             warnings.append(f"Không đọc được passcode từ {path}: {exc}")
             continue
-        label = path.name if path.parent == root else str(path)
+        label = path.name if path.parent == root / CDB_DIR else str(path)
         for code in sorted(hits):
             errors.append(f"{code}: passcode đã được dùng trong {label} — đổi ID trước khi phát hành")
     return errors, warnings
@@ -640,13 +650,14 @@ def collect_specs(json_dir: Path):
 
 def validate_specs(db_path: Path) -> bool:
     """Validate toàn bộ card-data/*.json mà không ghi CDB. Trả về True nếu sạch."""
-    json_dir = db_path.parent / "card-data"
+    project_root = project_root_of(db_path)
+    json_dir = project_root / "card-data"
     if not json_dir.is_dir():
         print(f"Error: card-data directory not found at {json_dir}", file=sys.stderr)
         return False
     print(f"Validating specs in {json_dir}/ ...")
     cards, n_err, n_warn = collect_specs(json_dir)
-    col_err, col_warn = report_collisions(db_path.parent, cards)
+    col_err, col_warn = report_collisions(project_root, cards)
     n_err += col_err
     n_warn += col_warn
     print("-" * 40)
@@ -662,7 +673,7 @@ def validate_specs(db_path: Path) -> bool:
 
 def compile_db(db_path: Path) -> bool:
     """Biên dịch card-data/*.json -> CDB. Atomic: chỉ thay CDB cũ khi mọi spec hợp lệ."""
-    project_root = db_path.parent
+    project_root = project_root_of(db_path)
     json_dir = project_root / "card-data"
 
     if not json_dir.is_dir():
@@ -770,7 +781,7 @@ def expected_rows(cards):
 
 
 def check_sync(db_path: Path) -> bool:
-    root = db_path.parent
+    root = project_root_of(db_path)
     cards, errors, _ = collect_specs(root / "card-data")
     if errors:
         return False

@@ -76,7 +76,7 @@ def get_project_paths():
         "queues_dir": project_root / "docs" / "queues",
         "pics_dir": project_root / "pics",
         "constants": project_root / "script" / "constants.lua",
-        "strings": project_root / "strings.conf",
+        "strings": project_root / "cdb" / "strings.conf",
     }
 
 
