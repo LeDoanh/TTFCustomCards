@@ -53,7 +53,7 @@ git push -u origin HEAD
 
 ## 4. Test trên nhánh
 
-EDOPro không có tùy chọn chọn nhánh trong config: `repo_manager.cpp` của EDOPro chỉ đọc các key `url`, `repo_name`, `repo_path`, `data_path`, `script_path`, `pics_path`, `lflist_path`, `should_update`, `should_read`, `not_git_repo`. Clone lần đầu lấy nhánh mặc định của GitHub (`master`). Mỗi lần mở game với `should_update: true`, EDOPro chạy `fetch origin` theo `remote.origin.fetch` của clone rồi `reset --hard` về `FETCH_HEAD`. Khi `remote.origin.fetch` chỉ liệt kê một nhánh thì `FETCH_HEAD` chính là nhánh đó. Vì vậy chỉ cần **ghim** nhánh trong git config của clone nằm trong game, bằng `tools/pin_game_branch.ps1`: dev push, mở game, game tự kéo bản mới của nhánh, không clone hay chép thêm gì.
+EDOPro không có tùy chọn chọn nhánh trong config: `repo_manager.cpp` của EDOPro chỉ đọc các key `url`, `repo_name`, `repo_path`, `data_path`, `script_path`, `pics_path`, `lflist_path`, `should_update`, `should_read`, `not_git_repo`. Clone lần đầu lấy nhánh mặc định của GitHub (`master`). Mỗi lần mở game với `should_update: true`, EDOPro chạy `fetch origin` theo `remote.origin.fetch` của clone rồi `reset --hard` về `FETCH_HEAD`. Khi `remote.origin.fetch` chỉ liệt kê một nhánh thì `FETCH_HEAD` chính là nhánh đó. Vì vậy chỉ cần **ghim** nhánh, tức là bảo clone nằm trong game chỉ theo dõi nhánh đó (sửa git config của clone), bằng `tools/pin_game_branch.ps1`: dev push, mở game, game tự kéo bản mới của nhánh, không clone hay chép thêm gì.
 
 Hành vi này đã chạy thử bằng libgit2 1.9.7 trên repo thử: ghim `feat/x` thì cập nhật cho nội dung `feat/x`; push thêm commit thì lần cập nhật sau nhận commit mới; ghim `feat/y` thì đổi sang `feat/y`; bỏ ghim thì về `master`. Bản libgit2 bên trong EDOPro có thể khác và chưa chạy thử với EDOPro thật.
 
@@ -66,19 +66,32 @@ Workspace sửa code đặt ở đâu tùy ý; game không đọc workspace. Kh�
 
 ### 4.2 Ghim nhánh cần test
 
-Chạy từ workspace sau khi đã push nhánh (không cần `git` trong PATH):
+Chạy từ workspace sau khi đã push nhánh (không cần `git` trong PATH). Bấm đúp `tools/pin_game_branch.cmd` để mở menu, hoặc:
 
 ```powershell
-powershell -File tools/pin_game_branch.ps1 engine/Labrynth
+powershell -ExecutionPolicy Bypass -File tools/pin_game_branch.ps1
 ```
 
-Đóng hẳn rồi mở lại EDOPro: game kéo đúng đầu nhánh đó. Push thêm commit thì chỉ cần mở lại EDOPro; đổi nhánh khác thì chạy lại script với tên mới. Chạy không tham số để xem đang ghim nhánh nào. Test xong trả về bản người chơi:
+Menu bấm số rồi Enter:
+
+```
+ 1. Chon nhanh de test
+ 2. Ve ban nguoi choi (bo chon nhanh)
+ 3. Doi duong dan game
+ 4. Xoa duong dan game da luu
+ 0. Thoat
+```
+
+- Mục 1: script tự hỏi GitHub lấy danh sách nhánh (API công khai, không cần đăng nhập) và hiện `develop` cùng các nhánh `engine/*`; bấm `a` để xem tất cả nhánh, `t` để nhập tên nhánh bằng tay, hoặc bấm số để chọn. Nhánh đang test có dấu `<- dang test`. Không lấy được danh sách (mất mạng, hết hạn mức API của GitHub) thì script tự chuyển sang hỏi tên nhánh.
+- Mục 3 và 4: đường dẫn game được hỏi một lần khi script không tự tìm ra, rồi lưu ở `%APPDATA%/TTFCustomCards/game-dir.txt`; đổi bằng mục 3, xóa bằng mục 4. Thứ tự tìm clone: tham số `-RepoDir`/`-GameDir` > đường dẫn đã lưu > clone chứa chính script này (tester) > biến `EDOPRO_DIR` > `F:/Game/ProjectIgnis`.
+- Không muốn mở menu thì truyền tham số:
 
 ```powershell
-powershell -File tools/pin_game_branch.ps1 -Unpin
+powershell -ExecutionPolicy Bypass -File tools/pin_game_branch.ps1 engine/Labrynth
+powershell -ExecutionPolicy Bypass -File tools/pin_game_branch.ps1 -Unpin
 ```
 
-Lần mở game sau, EDOPro cập nhật clone về `master`. Script sửa dòng `fetch =` của remote `origin` trong cấu hình Git của clone (tương đương `git remote set-branches origin <nhánh>`); đường dẫn game lấy từ `EDOPRO_DIR`, hoặc truyền `-GameDir`.
+Đóng hẳn rồi mở lại EDOPro: game kéo đúng đầu nhánh đó. Push thêm commit thì chỉ cần mở lại EDOPro; đổi nhánh khác thì chọn lại. Lần mở game sau khi về bản người chơi (mục 2 hoặc `-Unpin`), EDOPro cập nhật clone về `master`. Script sửa dòng `fetch =` của remote `origin` trong cấu hình Git của clone (tương đương `git remote set-branches origin <nhánh>`).
 
 - Game chỉ thấy file đã commit và push: `cdb/card-data.cdb` đã compile khớp JSON và artwork phải nằm trong commit, thiếu thì card mới không hiện.
 - Nhánh phải còn trên origin. Gõ sai tên hoặc nhánh bị xóa thì `fetch` lỗi: EDOPro báo lỗi và giữ nguyên bản cũ. Bỏ ghim hoặc ghim nhánh khác.
@@ -115,6 +128,31 @@ Muốn thử ngay khi chưa commit thì khai báo workspace là repo `not_git_re
 ```
 
 Đổi nhánh bằng `git switch` trong `ttf-dev` khi game đã đóng. Không đặt `url` cho entry này: thư mục không phải git repo mà có `url` thì EDOPro xóa thư mục rồi clone lại.
+
+### 4.6 Tester (chỉ có game, không có workspace)
+
+Tester cấu hình EDOPro đúng theo README như người chơi; không cần Git, Python hay tải thêm repo. Clone mà EDOPro tải về là bản sao đầy đủ của repo nên đã chứa sẵn `tools/pin_game_branch.cmd` và `tools/pin_game_branch.ps1`. EDOPro tự cập nhật clone từ `master` mỗi lần mở game có mạng, nên tester có chúng sau lần mở game đầu tiên kể từ bản `master` chứa chúng.
+
+1. Dev báo tên nhánh cần test (ví dụ `engine/Labrynth`) và bảo đảm nhánh đã push. Muốn thử bản tích hợp chưa phát hành thì dùng `develop`.
+2. Trong File Explorer vào thư mục game, mở `repositories/ttf-custom-cards/tools` và **bấm đúp `pin_game_branch.cmd`**. Menu hiện ra: bấm `1` rồi Enter, rồi bấm số của nhánh dev báo (danh sách có cả `develop`). Script nằm trong clone của game nên tự biết thư mục game, không hỏi đường dẫn.
+3. Đóng hẳn EDOPro rồi mở lại. Dựng deck trong Deck Edit, duel theo ma trận dev đưa (`docs/game-testing-workflow.md` §4) và gửi lại dev kết quả, kèm các dòng lỗi trong `error.log` của lần test nếu có.
+4. Xong thì bấm đúp lại `pin_game_branch.cmd`, bấm `2` (về bản người chơi).
+
+Khi đang ghim, game chỉ có nội dung của nhánh đó và không nhận bản phát hành mới; quên bỏ ghim thì tester ở lại nhánh test. Dev có thể đẩy thêm commit vào nhánh đang được test: tester chỉ cần đóng và mở lại EDOPro để nhận.
+
+**Không muốn chạy script:** ghim nhánh chỉ là sửa một dòng trong cấu hình Git của clone, tester làm được bằng Notepad.
+
+1. Đóng hẳn EDOPro. Mở `repositories/ttf-custom-cards/.git/config` trong thư mục game bằng Notepad (thư mục `.git` bị ẩn: dán đường dẫn đầy đủ vào hộp File -> Open của Notepad, hoặc bật View -> Show -> Hidden items trong File Explorer).
+2. Trong đoạn `[remote "origin"]`, đổi dòng `fetch = +refs/heads/*:refs/remotes/origin/*` thành dòng sau, thay `engine/Labrynth` bằng tên nhánh ở cả hai chỗ, rồi lưu file:
+
+```
+fetch = +refs/heads/engine/Labrynth:refs/remotes/origin/engine/Labrynth
+```
+
+3. Mở EDOPro, test như bước 3 ở trên.
+4. Trả về bản người chơi: sửa lại đúng dòng cũ `fetch = +refs/heads/*:refs/remotes/origin/*`.
+
+Gõ sai tên nhánh thì game báo lỗi cập nhật và giữ bản cũ, không hỏng gì. Đây đúng là thay đổi mà script thực hiện, nên hai cách tương đương.
 
 ## 5. Đồng bộ và xử lý xung đột
 

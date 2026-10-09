@@ -19,10 +19,10 @@ Dành cho dev làm card trên repo này. Quy tắc nhánh, phân bổ engine và
    - Chỉ tick file của đợt card này: `card-data/c<ID>.json`, `script/c<ID>.lua`, `pics/<ID>.jpg`, `cdb/card-data.cdb` và `feature_list.json`. Bỏ tick mọi file khác.
    - Ô **Summary** theo định dạng `[Tên bạn] [Feature]: <English description>` (hoặc `[Fix]`), rồi **Commit to engine/...**.
 5. **Push.** Nhấn **Publish branch** (lần đầu) hoặc **Push origin** (các lần sau). Game chỉ thấy file đã commit và push, nên không bỏ sót `cdb/card-data.cdb` và artwork.
-6. **Test trong game.** Từ terminal ở workspace:
+6. **Test trong game.** Bấm đúp `tools/pin_game_branch.cmd` trong workspace để mở menu (bấm 1 rồi bấm số của nhánh; lần đầu, nếu script chưa biết thư mục game, nó sẽ hỏi đường dẫn). Hoặc ghim thẳng từ terminal ở workspace:
 
 ```powershell
-powershell -File tools/pin_game_branch.ps1 engine/Labrynth
+powershell -ExecutionPolicy Bypass -File tools/pin_game_branch.ps1 engine/Labrynth
 ```
 
 Đóng hẳn EDOPro rồi mở lại: game tự kéo đúng nhánh vừa push. Tự dựng deck trong Deck Edit rồi duel theo ma trận trong `docs/game-testing-workflow.md`. Sửa tiếp thì commit, **Push origin**, mở lại EDOPro; script chỉ cần chạy một lần, nhánh engine có thể để ghim thường trực.
@@ -39,7 +39,7 @@ powershell -File tools/pin_game_branch.ps1 engine/Labrynth
 10. **Sau khi PR được merge.** Nhánh engine vẫn dùng tiếp: **Branch -> Merge into current branch...** -> `develop` để lấy bản đã merge, rồi làm đợt card tiếp theo ngay trên nhánh đó. Muốn chơi bản người chơi thì bỏ ghim:
 
 ```powershell
-powershell -File tools/pin_game_branch.ps1 -Unpin
+powershell -ExecutionPolicy Bypass -File tools/pin_game_branch.ps1 -Unpin
 ```
 
 ## 3. Lỗi thường gặp
