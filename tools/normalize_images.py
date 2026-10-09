@@ -3,19 +3,16 @@
 Hỗ trợ:
 - Phát hiện và sửa lỗi mismatch định dạng (file PNG lưu đuôi .jpg hoặc ngược lại).
 - Chuyển đổi toàn bộ kho ảnh về chuẩn JPEG (.jpg) đồng nhất theo yêu cầu.
-- Đồng bộ tự động sang thư mục game EDOPro và dọn dẹp các file cũ/sai định dạng.
 
 Cách dùng:
   python tools/normalize_images.py                        # Kiểm tra định dạng (check / dry-run)
   python tools/normalize_images.py --apply                # Tự động sửa lỗi mismatch
   python tools/normalize_images.py --to-jpg               # Chuẩn hóa toàn bộ ảnh về .jpg (dry-run)
   python tools/normalize_images.py --to-jpg --apply       # Thực hiện convert toàn bộ ảnh sang .jpg
-  python tools/normalize_images.py --to-jpg --apply --sync-game # Convert và đồng bộ sạch sang EDOPro
 """
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 import subprocess
 import sys
@@ -34,7 +31,6 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PICS_DIR = ROOT / "pics"
-DEFAULT_GAME_DIR = Path(os.environ.get("EDOPRO_DIR", r"F:\Game\ProjectIgnis"))
 
 MAGIC_PNG = b"\x89PNG\r\n\x1a\n"
 MAGIC_JPEG = b"\xff\xd8\xff"
@@ -368,56 +364,6 @@ def fix_mismatch_renames(issues: list[ImageIssue], dry_run: bool = True) -> tupl
     return fixed_count, logs
 
 
-def sync_to_game(pics_dir: Path, game_dir: Path, clean_pngs: bool = False) -> list[str]:
-    """Đồng bộ các file ảnh sang game và dọn dẹp file cũ."""
-    logs: list[str] = []
-    game_pics = game_dir / "repositories" / "ttf-custom-cards" / "pics"
-    if not game_pics.exists():
-        logs.append(f"[WARN] Không tìm thấy thư mục ảnh trong game: {game_pics}")
-        return logs
-
-    logs.append(f"[SYNC] Đồng bộ ảnh từ {pics_dir} -> {game_pics}")
-    copied = 0
-    removed_stale = 0
-
-    repo_files = {f.name: f for f in pics_dir.iterdir() if f.is_file()}
-
-    for repo_name, repo_path in repo_files.items():
-        dst = game_pics / repo_name
-        if not dst.exists() or dst.stat().st_size != repo_path.stat().st_size:
-            try:
-                import shutil
-                shutil.copy2(repo_path, dst)
-                copied += 1
-            except Exception as e:
-                logs.append(f"[ERROR] Lỗi copy {repo_name}: {e}")
-
-        # Nếu đang ở chế độ toàn bộ là .jpg hoặc repo có .jpg, xóa .png cũ trong game
-        if clean_pngs or repo_path.suffix.lower() == ".jpg":
-            stale_png = game_pics / f"{repo_path.stem}.png"
-            if stale_png.exists():
-                try:
-                    stale_png.unlink()
-                    removed_stale += 1
-                    logs.append(f"[CLEANUP] Đã xóa file .png cũ trong game: {stale_png.name}")
-                except Exception as e:
-                    logs.append(f"[ERROR] Không thể xóa {stale_png.name}: {e}")
-
-        # Ngược lại, nếu repo có .png, xóa .jpg cũ
-        if repo_path.suffix.lower() == ".png":
-            stale_jpg = game_pics / f"{repo_path.stem}.jpg"
-            if stale_jpg.exists():
-                try:
-                    stale_jpg.unlink()
-                    removed_stale += 1
-                    logs.append(f"[CLEANUP] Đã xóa file .jpg cũ trong game: {stale_jpg.name}")
-                except Exception as e:
-                    logs.append(f"[ERROR] Không thể xóa {stale_jpg.name}: {e}")
-
-    logs.append(f"[DONE] Đã copy {copied} file ảnh, dọn dẹp {removed_stale} file cũ trong game.")
-    return logs
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Kiểm tra và chuẩn hóa định dạng ảnh cho card EDOPro.",
@@ -450,17 +396,6 @@ def main() -> int:
         "--apply",
         action="store_true",
         help="Thực hiện đổi tên / convert (mặc định là chỉ kiểm tra/dry-run)",
-    )
-    parser.add_argument(
-        "--sync-game",
-        action="store_true",
-        help="Đồng bộ ảnh đã chuẩn hóa sang thư mục game EDOPro",
-    )
-    parser.add_argument(
-        "--game-dir",
-        type=Path,
-        default=DEFAULT_GAME_DIR,
-        help=f"Đường dẫn game EDOPro (mặc định: {DEFAULT_GAME_DIR})",
     )
 
     args = parser.parse_args()
@@ -522,12 +457,6 @@ def main() -> int:
         if len(logs) > 40:
             print(f"  ... và {len(logs) - 40} file khác.")
         print(f"\nTổng số file được xử lý: {count}/{len(mismatches)}")
-
-    if args.sync_game and args.apply:
-        print("\nĐồng bộ sang game:")
-        sync_logs = sync_to_game(target_dir, args.game_dir, clean_pngs=args.to_jpg)
-        for log in sync_logs:
-            print(f"  {log}")
 
     if not errors:
         print("\n[OK] Toàn bộ hình ảnh đều đạt chuẩn!")

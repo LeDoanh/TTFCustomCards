@@ -74,7 +74,7 @@ python tools/normalize_images.py --to-jpg
 python tools/normalize_images.py --to-jpg --apply
 ```
 
-Lệnh đầu chỉ liệt kê; `--apply` mới convert, thêm `--sync-game` để đồng bộ ảnh sang game.
+Lệnh đầu chỉ liệt kê; `--apply` mới convert.
 
 Sau khi các bước tĩnh đạt, `verify` copy ảnh queue thành `pics/<ID>.jpg|.png` nếu chưa có artwork, đọc lại bản copy để xác nhận rồi mới xóa ảnh trong `docs/queues/`. Không xác nhận được (đuôi `.gif`, copy lỗi) thì ảnh queue được giữ lại và chỉ đổi tên `w_` -> `d_`, kèm warning. Tự đặt artwork vào `pics/` trước cũng được: lúc đó `verify` giữ bản của bạn và chỉ xóa ảnh queue.
 
