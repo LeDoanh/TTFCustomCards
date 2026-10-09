@@ -8,18 +8,38 @@ Project này chứa các card do nhóm TTF tự thiết kế: script Lua, databa
 
 ## Cài đặt
 
-1. Clone repo này về máy
-2. Copy các file/thư mục runtime sau vào thư mục `expansions/` của EDOPro (copy nội dung `cdb/`, không copy thư mục `cdb/`):
-   ```
-   expansions/
-   ├── *.cdb            ← mọi file CDB trong cdb/ (card-data.cdb và CDB của các dev khác)
-   ├── strings.conf     ← cdb/strings.conf: tên archetype và counter
-   ├── script/          ← Lua scripts
-   └── pics/            ← artwork
-   ```
-3. Mở EDOPro → bật "Alternate format" để thấy card tùy chỉnh
+Không cần tải hay copy file thủ công: khai báo repo này trong cấu hình EDOPro, game sẽ tự tải về và tự cập nhật mỗi lần mở.
 
-Nếu nạp repo qua URL trong EDOPro (`config/configs.json`), mục repo phải có `"repo_path": "./repositories/ttf-custom-cards"` và `"data_path": "cdb"`. EDOPro chỉ đọc `*.cdb` và `strings.conf` từ đúng `data_path`, không đọc thư mục con; để `""` thì game không nạp card nào. `script_path` và `pics_path` giữ nguyên.
+1. Đóng EDOPro, mở file `config/user_configs.json` trong thư mục EDOPro.
+2. Thêm mục repo dưới đây vào mảng `"repos"`. Nếu file đang để trống như mặc định thì dán nguyên cả nội dung này:
+   ```json
+   {
+     "repos": [
+       {
+         "url": "https://github.com/LeDoanh/TTFCustomCards",
+         "repo_name": "TTFCustomCards",
+         "repo_path": "./repositories/ttf-custom-cards",
+         "data_path": "cdb",
+         "script_path": "script",
+         "should_update": true,
+         "should_read": true
+       }
+     ],
+     "urls": [],
+     "servers": []
+   }
+   ```
+   Nếu `"repos"` đã có repo khác, chỉ chép khối `{ ... }` của TTFCustomCards vào và nhớ dấu phẩy giữa các khối.
+3. Mở EDOPro. Lần đầu game tải repo vào `repositories/ttf-custom-cards/`, sau đó tự cập nhật theo repo trên GitHub. Bật "Alternate format" để thấy card tùy chỉnh.
+
+| Trường | Ý nghĩa |
+|---|---|
+| `data_path: "cdb"` | **Bắt buộc.** EDOPro chỉ đọc `*.cdb` và `strings.conf` đúng trong thư mục này, không đọc thư mục con. Để `""` thì game không nạp card nào. |
+| `repo_path` | Thư mục chứa bản tải về. Giữ đúng tên này để khớp với `tools/sync_game.ps1`. |
+| `script_path` | Thư mục Lua script, tương đối so với `repo_path`. |
+| `should_update` | `true` để game tự cập nhật repo mỗi lần mở. |
+
+Nếu bạn đang dùng cấu hình cũ (`repo_path` là `./repositories/custom_cards_zesty` hoặc `data_path` là `""`), sửa như mục trên rồi xóa thư mục `repositories/custom_cards_zesty`.
 
 Danh sách card đầy đủ xem trực tiếp trong game sau khi cài. Tra nhanh một card: `python tools/manage_db.py query <tên hoặc ID>`.
 
@@ -47,7 +67,7 @@ cdb/             — Mọi database và strings.conf:
 
 ## Dữ liệu và công cụ
 
-Đọc [quy tắc CDB](docs/agent-rules.md#3-cdb) trước khi cập nhật database. Chỉ copy `cdb/`, `script/` và `pics/` vào game; không copy `tools/` hay queue. Thay đồng bộ các file CDB sau lần cập nhật database để tránh trùng ID với bản cũ.
+Đọc [quy tắc CDB](docs/agent-rules.md#3-cdb) trước khi cập nhật database. Để test card trong game, chạy `powershell -File tools/sync_game.ps1` (xem [quy trình test](docs/game-testing-workflow.md)): tool chỉ ghi `cdb/`, `script/` và `pics/` vào bản clone của game, không copy `tools/` hay queue, và thay toàn bộ file CDB để tránh trùng ID với bản cũ.
 
 ---
 
