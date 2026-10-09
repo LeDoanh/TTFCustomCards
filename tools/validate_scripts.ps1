@@ -285,7 +285,7 @@ $Global:LuaStringMethods = [System.Collections.Generic.HashSet[string]]::new(
 
 # Add custom constants from constants.lua if exists
 $RootPath = Split-Path $PSScriptRoot
-$CustomPath = Join-Path $RootPath "script\constants.lua"
+$CustomPath = Join-Path (Join-Path $RootPath "script") "constants.lua"
 $Global:CustomIdentifiers = [System.Collections.Generic.List[string]]::new()
 if (Test-Path $CustomPath) {
     $constContent = Get-Content $CustomPath -Raw

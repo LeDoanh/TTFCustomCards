@@ -82,4 +82,4 @@ Sau khi các bước tĩnh đạt, `verify` copy ảnh queue thành `pics/<ID>.j
 
 ## 6. Trước khi commit
 
-Review `git diff --check` và `git diff --stat`. Thay đổi CDB theo `docs/agent-rules.md` §3.4. Quy tắc nhánh và commit nằm trong `AGENTS.md`.
+Review `git diff --check` và `git diff --stat`. Thay đổi CDB theo `docs/agent-rules.md` §3.4. Quy tắc commit nằm trong `AGENTS.md`; nhánh, PR và đồng bộ với `develop` nằm trong `docs/dev-workflow.md`.

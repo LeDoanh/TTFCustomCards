@@ -4,7 +4,7 @@
 
 ## Git
 
-- Đây là repo gốc (`origin` = `LeDoanh/TTFCustomCards`), không còn là fork của repo nào. Nhánh chính là **`master`**. Không tạo feature branch: commit rồi push thẳng lên `origin/master` (đang ở worktree thì `git push origin HEAD:master`).
+- Đây là repo gốc (`origin` = `LeDoanh/TTFCustomCards`), không còn là fork của repo nào. **`master`** là bản phát hành mà EDOPro của người chơi tự kéo; **`develop`** là nhánh tích hợp. Không push thẳng vào hai nhánh này: tách `feat/`, `fix/`, `chore/` từ `develop`, push nhánh làm việc (`git push -u origin HEAD`) rồi PR vào `develop`. Mỗi dev sở hữu engine được phân bổ; phân bổ, test trên nhánh, PR và phát hành theo phiên bản xem `docs/dev-workflow.md`.
 - Chỉ commit/push khi được yêu cầu. Gom JSON, Lua, artwork và `cdb/card-data.cdb` của cùng một thay đổi. Format: `[<Git user>] [Fix|Feature|Refactor|Chore]: <English description>`.
 - Git diff/log là lịch sử thay đổi; không viết nhật ký phiên.
 
@@ -21,10 +21,10 @@
 
 1. Chốt effect text và các tình huống cần test (`docs/agent-workflow.md` §1).
 2. Tìm official card cùng cơ chế: `python tools/read_official.py --text "<cụm trong effect>"` rồi `python tools/read_official.py <ID>` để lấy script. Ghi card ID, effect/function tham khảo và phần khác biệt. Không lấy custom card cũ làm bằng chứng API đúng.
-3. Archetype chưa đăng ký: `python tools/manage_harness.py archetype add <Name> [<setcode>]`; official thì truyền setcode tra trong `repositories/delta-bagooska/script/archetype_setcode_constants.lua` của bản cài game, fan-made thì bỏ trống để tool chọn setcode và ghi `script/constants.lua` và `cdb/strings.conf`. Tạo card: `python tools/manage_harness.py start <ID> "<name>" <template>`. Template chỉ là khung, xóa hiệu ứng mẫu không thuộc yêu cầu.
+3. Archetype chưa đăng ký (đăng ký qua PR `chore/claim-<Name>` trước khi tạo card, `docs/dev-workflow.md` §2): `python tools/manage_harness.py archetype add <Name> [<setcode>]`; official thì truyền setcode tra trong `repositories/delta-bagooska/script/archetype_setcode_constants.lua` của bản cài game, fan-made thì bỏ trống để tool chọn setcode và ghi `script/constants.lua` và `cdb/strings.conf`. Tạo card: `python tools/manage_harness.py start <ID> "<name>" <template>`. Template chỉ là khung, xóa hiệu ứng mẫu không thuộc yêu cầu.
 4. Sửa JSON và Lua; đối chiếu từng effect với `docs/agent-rules.md`. Không bịa API, không suy ra timing từ tên hàm.
 5. `python tools/manage_harness.py verify <ID>`; exit code phải là 0. Đây là kiểm tra **tĩnh**, không chứng minh hiệu ứng chạy đúng.
-6. `powershell -File tools/sync_game.ps1 -CardId <ID>`, rồi duel bằng deck `test_<ID>` theo ma trận kịch bản trong `docs/game-testing-workflow.md`.
+6. Commit (gồm `cdb/card-data.cdb`) và push nhánh, ghim nhánh bằng `powershell -File tools/pin_game_branch.ps1 <nhánh>` rồi mở lại EDOPro để game tự kéo bản mới (`docs/dev-workflow.md` §4); hoặc `powershell -File tools/sync_game.ps1 -CardId <ID>` trên bản game riêng để có sẵn deck `test_<ID>`. Rồi duel theo ma trận kịch bản trong `docs/game-testing-workflow.md`.
 7. Báo cáo: ID, official reference, lệnh đã chạy và kết quả, kịch bản duel với kết quả thực tế. Chưa duel thì ghi "kiểm tra tĩnh đạt, runtime chưa kiểm thử"; trạng thái queue `done` không phải chứng nhận runtime.
 
 ## Ràng buộc viết card
@@ -41,5 +41,7 @@
 - `docs/agent-workflow.md`: tạo card — yêu cầu, official reference, harness, kiểm tra tĩnh, artwork.
 - `docs/game-testing-workflow.md`: test card — sync sang game, deck test, duel, error log, ma trận kịch bản.
 - `docs/agent-rules.md`: quy tắc Lua, passcode/setcode, schema CDB, bitmask, ownership và conflict CDB.
+- `docs/dev-workflow.md`: làm việc nhóm — nhánh, phân bổ engine, test trên nhánh, PR vào `develop`, phát hành `vX.Y.Z`, CI, thiết lập GitHub.
+- `docs/github-desktop-guide.md`: từng bước thao tác bằng GitHub Desktop cho dev.
 
 Kiểm tra công cụ: `python -m unittest discover -s tests -v`.

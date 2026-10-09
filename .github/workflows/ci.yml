@@ -1,0 +1,91 @@
+name: CI
+
+# Chạy thưa để tiết kiệm phút Actions: một lần khi mở PR (hoặc khi PR nháp chuyển sang sẵn sàng),
+# một lần sau mỗi merge vào develop/master, và thủ công (Actions -> CI -> Run workflow).
+# Không chạy theo từng lần push lên nhánh làm việc.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    branches: [develop, master]
+    paths-ignore: ['**/*.md', 'docs/**']
+  push:
+    branches: [develop, master]
+    paths-ignore: ['**/*.md', 'docs/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Pillow and Lua
+        run: |
+          python -m pip install --quiet pillow
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.4
+          command -v lua >/dev/null || sudo ln -s "$(command -v lua5.4)" /usr/local/bin/lua
+          lua -v
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests
+
+      - name: Validate card specs
+        run: python tools/manage_db.py validate
+
+      - name: Check Lua, JSON, feature_list and CDB are in sync
+        run: python tools/manage_db.py check-sync
+
+      # PR và push: chỉ script của card trong card-data/ có thay đổi. Thủ công hoặc không xác định được
+      # phạm vi thay đổi: toàn bộ card trong card-data/. Script của dev khác ngoài card-data/ không bị quét.
+      - name: Validate Lua scripts of card-data cards
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -u
+          all_owned() {
+            for f in card-data/c*.json; do
+              id=$(basename "$f" .json)
+              [ -f "script/$id.lua" ] && echo "script/$id.lua"
+            done
+          }
+          range=""
+          case "$EVENT" in
+            pull_request) range="$BASE_SHA...$HEAD_SHA" ;;
+            push) case "$BEFORE_SHA" in 0000000000000000000000000000000000000000) ;; *) range="$BEFORE_SHA...$AFTER_SHA" ;; esac ;;
+          esac
+          if [ -n "$range" ] && changed=$(git diff --name-only "$range" -- 'script/c*.lua' 'card-data/c*.json'); then
+            files=$(for p in $changed; do
+              id=$(basename "$p"); id=${id%.*}
+              [ -f "script/$id.lua" ] && [ -f "card-data/$id.json" ] && echo "script/$id.lua"
+            done | sort -u)
+          else
+            files=$(all_owned)
+          fi
+          status=0
+          count=0
+          for f in $files; do
+            count=$((count + 1))
+            pwsh -NoProfile -File tools/validate_scripts.ps1 -Path "$f" -Quiet || status=1
+          done
+          echo "Đã kiểm tra $count script"
+          exit $status
