@@ -35,7 +35,7 @@ Không cần tải hay copy file thủ công: khai báo repo này trong cấu h�
 | Trường | Ý nghĩa |
 |---|---|
 | `data_path: "cdb"` | **Bắt buộc.** EDOPro chỉ đọc `*.cdb` và `strings.conf` đúng trong thư mục này, không đọc thư mục con. Để `""` thì game không nạp card nào. |
-| `repo_path` | Thư mục chứa bản tải về. Giữ đúng tên này để khớp với `tools/sync_game.ps1`. |
+| `repo_path` | Thư mục chứa bản tải về. Giữ đúng tên này để khớp với `tools/pin_game_branch.ps1`. |
 | `script_path` | Thư mục Lua script, tương đối so với `repo_path`. |
 | `should_update` | `true` để game tự cập nhật repo mỗi lần mở. |
 
@@ -67,7 +67,7 @@ cdb/             — Mọi database và strings.conf:
 
 ## Dữ liệu và công cụ
 
-Đọc [quy tắc CDB](docs/agent-rules.md#3-cdb) trước khi cập nhật database. Để test card trong game, chạy `powershell -File tools/sync_game.ps1` (xem [quy trình test](docs/game-testing-workflow.md)): tool chỉ ghi `cdb/`, `script/` và `pics/` vào bản clone của game, không copy `tools/` hay queue, và thay toàn bộ file CDB để tránh trùng ID với bản cũ.
+Đọc [quy tắc CDB](docs/agent-rules.md#3-cdb) trước khi cập nhật database. Để test card trong game, push nhánh rồi chọn nhánh đó bằng `tools/pin_game_branch.cmd` (xem [quy trình test](docs/game-testing-workflow.md)): game tự kéo nhánh về, không cần chép file.
 
 ---
 

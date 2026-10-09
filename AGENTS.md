@@ -24,7 +24,7 @@
 3. Archetype chưa đăng ký (đăng ký qua PR `chore/claim-<Name>` trước khi tạo card, `docs/dev-workflow.md` §2): `python tools/manage_harness.py archetype add <Name> [<setcode>]`; official thì truyền setcode tra trong `repositories/delta-bagooska/script/archetype_setcode_constants.lua` của bản cài game, fan-made thì bỏ trống để tool chọn setcode và ghi `script/constants.lua` và `cdb/strings.conf`. Tạo card: `python tools/manage_harness.py start <ID> "<name>" <template>`. Template chỉ là khung, xóa hiệu ứng mẫu không thuộc yêu cầu.
 4. Sửa JSON và Lua; đối chiếu từng effect với `docs/agent-rules.md`. Không bịa API, không suy ra timing từ tên hàm.
 5. `python tools/manage_harness.py verify <ID>`; exit code phải là 0. Đây là kiểm tra **tĩnh**, không chứng minh hiệu ứng chạy đúng.
-6. Commit (gồm `cdb/card-data.cdb`) và push nhánh, ghim nhánh bằng `powershell -File tools/pin_game_branch.ps1 <nhánh>` rồi mở lại EDOPro để game tự kéo bản mới (`docs/dev-workflow.md` §4); hoặc `powershell -File tools/sync_game.ps1 -CardId <ID>` trên bản game riêng để có sẵn deck `test_<ID>`. Rồi duel theo ma trận kịch bản trong `docs/game-testing-workflow.md`.
+6. Commit (gồm `cdb/card-data.cdb`) và push nhánh, ghim nhánh bằng `powershell -File tools/pin_game_branch.ps1 <nhánh>` rồi mở lại EDOPro để game tự kéo bản mới (`docs/dev-workflow.md` §4). Rồi duel theo ma trận kịch bản trong `docs/game-testing-workflow.md`.
 7. Báo cáo: ID, official reference, lệnh đã chạy và kết quả, kịch bản duel với kết quả thực tế. Chưa duel thì ghi "kiểm tra tĩnh đạt, runtime chưa kiểm thử"; trạng thái queue `done` không phải chứng nhận runtime.
 
 ## Ràng buộc viết card
