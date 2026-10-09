@@ -8,12 +8,18 @@ Dành cho mọi người cùng làm trên repo này: mỗi dev phụ trách mộ
 | :--- | :--- | :--- |
 | `master` | Bản phát hành. EDOPro của người chơi tự kéo nhánh này (`should_update: true`, xem README), nên mọi commit ở đây tới tay họ ngay | Chỉ PR phát hành/hotfix do maintainer merge, mỗi lần kèm tag `vX.Y.Z` |
 | `develop` | Nhánh tích hợp: gom mọi thay đổi đã test, chờ phát hành | Chỉ qua PR đã duyệt |
-| `feat/<Engine>-<chủ đề>` | Thêm card hoặc đợt card mới | Owner của engine |
-| `fix/<Engine>-<chủ đề>` | Sửa lỗi card | Owner, hoặc người khác kèm owner review |
+| `engine/<Engine>` | Nhánh dài hạn của một engine: mọi card của engine đó, sống suốt thời gian engine còn được phát triển | Owner của engine |
+| `fix/<Engine>-<chủ đề>` | Sửa card của engine do người khác làm; owner review | Người sửa |
 | `chore/<chủ đề>` | Đăng ký engine, tools, docs, cập nhật EDOPro | Maintainer hoặc dev |
 | `hotfix/<chủ đề>` | Sửa gấp bản đã phát hành, tách từ `master` | Maintainer |
 
-Nhánh làm việc tách từ `develop` (trừ hotfix) và sống ngắn: một PR là một đợt card đã test xong, không phải cả engine. Merge xong thì xóa nhánh, đợt sau tách lại từ `develop`.
+Mỗi engine có một nhánh `engine/<Engine>` (ví dụ `engine/Labrynth`, `engine/Blue_Eye`), tách từ `develop` sau khi engine đã đăng ký (mục 2). Owner cứ commit và push lên đó; mỗi lần xong một đợt card đã test thì mở PR vào `develop`, merge xong nhánh vẫn dùng tiếp. Nhánh sống lâu không phải vấn đề nếu giữ ba điều:
+
+1. PR vào `develop` dùng **Merge commit**, không dùng squash. Squash viết lại lịch sử, nên nhánh dùng lại sẽ báo xung đột và commit trùng ở các PR sau.
+2. Merge `origin/develop` về nhánh thường xuyên (mục 5), mỗi lần bắt đầu làm việc, để xung đột `card-data.cdb` đến từng ít một thay vì dồn lại.
+3. Khi PR đang mở, chỉ push commit sửa theo góp ý. Mọi commit đẩy lên nhánh đều vào PR đang mở, nên việc mới để dưới máy hoặc đợi PR merge.
+
+Nhánh `fix/`, `chore/`, `hotfix/` ngắn hạn: merge xong không dùng lại. Mọi nhánh được giữ trên GitHub sau merge (không bật tự xóa nhánh); engine làm xong thì chủ repo xóa tay nhánh `engine/` của nó.
 
 Giữ `master` làm default branch trên GitHub: clone mới của EDOPro nhận nhánh mặc định, đổi sang `develop` thì người chơi mới sẽ nhận bản chưa phát hành.
 
@@ -26,22 +32,24 @@ Nhận engine mới, trước khi tạo card nào:
 1. Mở issue `Engine: <Name>`, gán owner, ghi danh sách effect và nguồn. Issue là sổ phân bổ; không ghi owner vào `feature_list.json` vì tool quản lý file đó. Đổi người phụ trách thì đổi assignee, passcode range giữ nguyên vì gắn vào engine.
 2. Owner tách `chore/claim-<Name>` từ `develop` mới nhất, chạy `python tools/manage_harness.py archetype add <Name>` (kèm setcode nếu là archetype official), commit đúng ba file tool đã đổi: `feature_list.json`, `script/constants.lua`, `cdb/strings.conf`.
 3. Maintainer merge PR đó vào `develop` **trước** khi người khác nhận engine. Tool chọn setcode và range trống theo working tree của nhánh hiện tại, nên hai người đăng ký song song sẽ nhận cùng setcode; đăng ký tuần tự qua `develop` là cách tránh trùng.
-4. Owner tách `feat/<Name>-<chủ đề>` từ `develop` đã có đăng ký rồi mới tạo card.
+4. Owner tách `engine/<Name>` từ `develop` đã có đăng ký rồi mới tạo card. Nhánh này dùng cho cả engine.
 
 ## 3. Vòng làm việc của owner
 
 ```powershell
 git fetch origin
-git switch -c feat/Labrynth-extra-cards origin/develop
+git switch -c engine/Labrynth origin/develop      # lần đầu; các lần sau: git switch engine/Labrynth
 # tạo card, verify, test theo agent-workflow.md và game-testing-workflow.md
 git add card-data/c<ID>.json script/c<ID>.lua pics/<ID>.jpg cdb/card-data.cdb feature_list.json
 git commit -m "[<Git user>] [Feature]: <English description>"
+git push -u origin HEAD
 ```
 
 - Add từng file của thay đổi, không `git add -A`.
 - Một nhánh chỉ chứa file của một engine (`card-data/c<ID>.json`, `script/c<ID>.lua`, `pics/<ID>` trong range của engine), cùng `cdb/card-data.cdb` và phần engine đó trong `feature_list.json`. Sửa file dùng chung (`tools/`, `docs/`, template, `script/constants.lua`) thì tách sang nhánh `chore/` riêng.
 - Không dùng "Add files via upload" hay sửa trên web: bỏ qua `verify` và làm CDB lệch JSON.
-- Game chỉ thấy những gì đã push (mục 4): `verify` sinh lại `cdb/card-data.cdb`, rồi commit cả file này và artwork trước khi `git push -u origin HEAD`. Nhánh làm việc ở repo gốc, không cần fork.
+- Game chỉ thấy những gì đã push (mục 4): `verify` sinh lại `cdb/card-data.cdb`, rồi commit cả file này và artwork trước khi `git push`. Nhánh làm việc ở repo gốc, không cần fork.
+- Mỗi commit theo định dạng commit của `AGENTS.md`: Merge commit giữ nguyên từng commit của dev trong lịch sử `develop`.
 
 ## 4. Test trên nhánh
 
@@ -61,7 +69,7 @@ Workspace sửa code đặt ở đâu tùy ý; game không đọc workspace. Kh�
 Chạy từ workspace sau khi đã push nhánh (không cần `git` trong PATH):
 
 ```powershell
-powershell -File tools/pin_game_branch.ps1 feat/Labrynth-extra-cards
+powershell -File tools/pin_game_branch.ps1 engine/Labrynth
 ```
 
 Đóng hẳn rồi mở lại EDOPro: game kéo đúng đầu nhánh đó. Push thêm commit thì chỉ cần mở lại EDOPro; đổi nhánh khác thì chạy lại script với tên mới. Chạy không tham số để xem đang ghim nhánh nào. Test xong trả về bản người chơi:
@@ -73,7 +81,8 @@ powershell -File tools/pin_game_branch.ps1 -Unpin
 Lần mở game sau, EDOPro cập nhật clone về `master`. Script sửa dòng `fetch =` của remote `origin` trong cấu hình Git của clone (tương đương `git remote set-branches origin <nhánh>`); đường dẫn game lấy từ `EDOPRO_DIR`, hoặc truyền `-GameDir`.
 
 - Game chỉ thấy file đã commit và push: `cdb/card-data.cdb` đã compile khớp JSON và artwork phải nằm trong commit, thiếu thì card mới không hiện.
-- Nhánh phải còn trên origin. Nhánh đã merge và bị xóa (tự xóa sau merge, mục 9) hoặc gõ sai tên thì `fetch` lỗi: EDOPro báo lỗi và giữ nguyên bản cũ. Bỏ ghim hoặc ghim nhánh khác.
+- Nhánh phải còn trên origin. Gõ sai tên hoặc nhánh bị xóa thì `fetch` lỗi: EDOPro báo lỗi và giữ nguyên bản cũ. Bỏ ghim hoặc ghim nhánh khác.
+- Nhánh engine sống lâu nên owner có thể để ghim thường trực: mỗi lần mở game, EDOPro kéo bản mới nhất của nhánh. Chỉ `-Unpin` khi cần chơi bản người chơi hoặc test bản phát hành. Game chỉ có những card đã nằm trong nhánh đang ghim.
 - Không có deck `test_<ID>` dựng sẵn: tự dựng deck trong Deck Edit (3 bản card cần test, card cùng archetype để tìm/tương tác).
 
 ### 4.3 Ba cấp test
@@ -140,9 +149,10 @@ Mô tả PR gồm: engine, card ID, official reference đã dùng (`docs/agent-w
 
 Chủ repo duyệt: tab "Files changed" chỉ có file của một engine (mục 3); test lại nhánh nếu cần (4.4); "Review changes" -> Approve hoặc Request changes. Merge theo thứ tự, mỗi lần một PR:
 
-- Base `develop`: "Squash and merge", tiêu đề theo định dạng commit của `AGENTS.md`. Nhánh tự xóa sau merge (mục 9).
+- Base `develop`: **"Create a merge commit"**, không squash (mục 1). Sửa ô tiêu đề merge commit theo định dạng commit của `AGENTS.md` trước khi xác nhận. Nhánh được giữ sau merge (không bật tự xóa nhánh, mục 9).
 - Mọi PR card đều sửa `cdb/card-data.cdb`, nên sau khi một PR merge, PR kia báo "This branch has conflicts". Dev merge `origin/develop` về nhánh, `compile` lại CDB (mục 5) rồi push. Xung đột này là chốt chặn bảo đảm CDB luôn sinh từ nguồn đã gồm mọi PR trước. Không bật "Require branches to be up to date" và không đặt CI làm status check bắt buộc: tùy chọn đó của GitHub gắn với status check, còn CI chỉ chạy một lần mỗi PR nên một check bắt buộc sẽ treo ở các commit sau.
 - CI (mục 10) chạy một lần khi mở PR và một lần sau mỗi merge; xem dấu xanh/đỏ trên PR hoặc tab Actions. Dev đẩy thêm commit sau lần CI đầu thì CI không tự chạy lại: Actions -> CI -> Run workflow, chọn nhánh PR.
+- PR đang mở thì dev chỉ push commit sửa theo góp ý (mục 1); việc mới đợi PR merge.
 - Chạy test cấp 2 sau mỗi merge.
 
 ## 7. Phát hành theo phiên bản
@@ -204,15 +214,10 @@ git push origin v1.0.0
 GitHub Desktop tạo được `develop`: Current Branch -> New Branch -> tên `develop` (based on `master`) -> Create Branch -> Publish branch. Tag làm trên web: Releases -> Draft a new release -> ô "Choose a tag" gõ `v1.0.0` rồi "Create new tag on publish", Target `master` -> Generate release notes -> Publish release.
 
 3. Settings -> Collaborators -> Add people: nhập username dev, quyền Write. Dev phải chấp nhận lời mời.
-4. Settings -> General -> Pull Requests: bật "Allow squash merging" và "Allow merge commits", tắt "Allow rebase merging", bật "Automatically delete head branches".
-5. Settings -> Rules -> Rulesets -> New ruleset -> New branch ruleset. Tạo hai ruleset, cùng cấu hình trừ tên, nhánh đích và kiểu merge:
+4. Settings -> General -> Pull Requests (đây là một đoạn trên trang General, kéo xuống, không phải mục trong sidebar): bật "Allow merge commits", tắt "Allow rebase merging", tắt "Automatically delete head branches" (giữ nhánh sau merge). "Allow squash merging" để bật hay tắt đều được, vì ruleset ở bước 5 chỉ cho Merge.
+5. Settings -> Rules -> Rulesets -> New ruleset -> New branch ruleset. Một ruleset tên `protect-branches` với hai target: Add target -> Include by pattern, lần lượt `develop` và `master`.
 
-| Tên | Nhánh đích (Add target -> Include by pattern) | Allowed merge methods |
-| :--- | :--- | :--- |
-| `protect-develop` | `develop` | Squash |
-| `protect-master` | `master` | Merge |
-
-Cấu hình chung: Enforcement status **Active**; Bypass list -> Add bypass -> Repository admin, rồi bấm dấu ba chấm cạnh "Always allow" chọn **For pull requests only** (chủ repo vẫn phải qua PR nhưng tự merge được PR của mình, không push thẳng được); bật "Restrict deletions", "Block force pushes", "Require a pull request before merging" với Required approvals = 1, **"Require review from Code Owners"** và Allowed merge methods như bảng. Không thêm "Require status checks" (mục 6). File `.github/CODEOWNERS` (`* @LeDoanh`, đã có trong repo từ bước 1) làm cho mọi file thuộc chủ repo, nên PR của dev chỉ merge được sau khi chủ repo approve; approve của collaborator khác không tính. PR của chính chủ repo không tự approve được, đã có quyền bypass "For pull requests only" ở trên lo phần này.
+Cấu hình: Enforcement status **Active**; Bypass list -> Add bypass -> Repository admin, rồi bấm dấu ba chấm cạnh "Always allow" chọn **For pull requests only** (chủ repo vẫn phải qua PR nhưng tự merge được PR của mình, không push thẳng được); bật "Restrict deletions", "Block force pushes", "Require a pull request before merging" với Required approvals = 1, **"Require review from Code Owners"** và Allowed merge methods chỉ chọn **Merge**. Không thêm "Require status checks" (mục 6). File `.github/CODEOWNERS` (`* @LeDoanh`, đã có trong repo từ bước 1) làm cho mọi file thuộc chủ repo, nên PR của dev chỉ merge được sau khi chủ repo approve; approve của collaborator khác không tính. PR của chính chủ repo không tự approve được, đã có quyền bypass "For pull requests only" ở trên lo phần này.
 
 6. Settings -> General -> Default branch: giữ `master` (mục 1).
 7. Chạy thử CI trước khi mời dev: Actions -> CI -> Run workflow (nhánh `master`). Phải xanh. Workflow chưa từng chạy trên runner thật, nên bước này là bài kiểm tra đầu tiên; đỏ ở bước "Validate Lua scripts" thì gửi log để sửa.

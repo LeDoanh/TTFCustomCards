@@ -7,7 +7,7 @@
     FETCH_HEAD la nhanh do, nen game tu keo ban moi cua nhanh sau moi lan dev push.
     Script sua dung dong "fetch =" cua remote origin trong .git/config, khong can git trong PATH.
 .PARAMETER Branch
-    Ten nhanh can test (da push len origin), vi du feat/Labrynth-extra-cards.
+    Ten nhanh can test (da push len origin), vi du engine/Labrynth.
 .PARAMETER Unpin
     Bo ghim, tra clone ve theo doi moi nhanh (game cap nhat ve master o lan mo sau).
 .PARAMETER GameDir
@@ -15,7 +15,7 @@
 .PARAMETER RepoDir
     Clone repo trong game. Mac dinh: <GameDir>\repositories\ttf-custom-cards.
 .EXAMPLE
-    powershell -File tools/pin_game_branch.ps1 feat/Labrynth-extra-cards
+    powershell -File tools/pin_game_branch.ps1 engine/Labrynth
     powershell -File tools/pin_game_branch.ps1 -Unpin
     powershell -File tools/pin_game_branch.ps1
 #>
