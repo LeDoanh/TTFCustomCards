@@ -44,18 +44,22 @@ function s.initial_effect(c)
 	-- ============================================================
 	-- Effect 1b — Activate from hand during opponent's turn
 	-- ============================================================
+	-- Chỉ nhận cờ Quick khi đang ở lượt của đối thủ
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e2:SetCode(EFFECT_BECOME_QUICK)
 	e2:SetRange(LOCATION_HAND)
+	e2:SetCondition(s.quickcon)
 	c:RegisterEffect(e2)
 
+	-- Chỉ cho phép kích hoạt từ tay không cần Úp ở lượt của đối thủ
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE)
 	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e3:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
 	e3:SetRange(LOCATION_HAND)
+	e3:SetCondition(s.quickcon)
 	c:RegisterEffect(e3)
 
 	-- ============================================================
@@ -88,6 +92,11 @@ function s.initial_effect(c)
 	e5:SetTarget(s.opptg)
 	e5:SetOperation(s.oppop)
 	c:RegisterEffect(e5)
+end
+
+-- Điều kiện áp dụng trạng thái Quick: Chỉ trong lượt của đối thủ
+function s.quickcon(e)
+	return Duel.GetTurnPlayer()~=e:GetHandlerPlayer()
 end
 
 -- ============================================================
@@ -155,10 +164,14 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 -- ============================================================
--- Effect 2: Your Turn Logic
+-- Effect 2: Your Turn Logic (Chuẩn Normal Spell - Spell Speed 1)
 -- ============================================================
 function s.selfcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==tp
+	local ph=Duel.GetCurrentPhase()
+	-- Chỉ cho phép kích hoạt ở lượt mình, trong Main Phase, và khi chưa có Chain nào đang mở (Chain Link 0)
+	return Duel.GetTurnPlayer()==tp 
+		and (ph==PHASE_MAIN1 or ph==PHASE_MAIN2) 
+		and Duel.GetCurrentChain()==0
 end
 
 function s.selftg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -202,7 +215,7 @@ function s.opptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.IsExistingMatchingCard(Card.IsAbleToDeck,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil)
 	end
-	--Opponent cannot activate cards or effects in response to this effect
+	-- Đối thủ không thể kích hoạt card/effect phản ứng lại hiệu ứng này
 	Duel.SetChainLimit(function(e,ep,tp) return ep==tp end)
 	local g=Duel.GetMatchingGroup(Card.IsAbleToDeck,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
@@ -218,7 +231,7 @@ function s.oppop(e,tp,eg,ep,ev,re,r,rp)
 		local req_banish=ct*3
 		local deck_ct=Duel.GetFieldGroupCount(1-tp,LOCATION_DECK,0)
 		
-		--Opponent can banish top of Deck face-down to negate this effect
+		-- Đối thủ có thể trục xuất úp từ đầu Deck để phủ nhận hiệu ứng này
 		if deck_ct>=req_banish and Duel.SelectYesNo(1-tp,aux.Stringid(id,2)) then
 			local rg=Duel.GetDecktopGroup(1-tp,req_banish)
 			Duel.DisableShuffleCheck()
