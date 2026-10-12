@@ -1,137 +1,117 @@
--- ============================================================
--- Card Name: Sky Striker Special Maneuver - The Chosen One
--- Passcode : 90600041
--- Type     : Spell / Quick-Play
--- Archetype: Sky Striker (0x115)
--- ============================================================
--- Effect 1 (Quick-Play Activation):
--- During the Standby Phase of each turn: You can declare 1 Monster Type;
--- neither player can activate the effects of monsters of that declared Type
--- for the rest of this turn. If this card is activated: You can only activate
--- the effects of "Sky Striker" monsters for the rest of this duel.
---
--- Effect 2 (GY Ignition):
--- During your Main Phase: You can banish this card from your GY;
--- add 1 "Sky Striker" Spell from your Deck to your hand.
---
--- Effect 3 (GY Trigger):
--- If a "Sky Striker" monster you control battles an opponent's monster while
--- you have 3 or more Spells in your GY: You can target 1 card your opponent
--- controls; destroy it.
---
--- OPT clause:
--- You can only use each effect of "Sky Striker Special Maneuver - The Chosen One" once per turn.
--- ============================================================
-
+-- Sky Striker Special Maneuver - The Chosen One
+-- ID: 90600041
 local s,id=GetID()
-
 function s.initial_effect(c)
-	-- Effect 1: Standby Phase activation
+	-- [1] Kích hoạt: Khóa hiệu ứng, chỉ được kích hoạt hiệu ứng quái thú "Sky Striker" trong phần còn lại của Duel
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetHintTiming(TIMING_STANDBY_PHASE,TIMING_STANDBY_PHASE)
-	e1:SetCountLimit(1,id)
-	e1:SetCondition(s.actcon)
-	e1:SetTarget(s.acttg)
-	e1:SetOperation(s.actop)
+	e1:SetOperation(s.activate_op)
 	c:RegisterEffect(e1)
 
-	-- Effect 2: Banish from GY to search 1 Sky Striker Spell
+	-- [2] Hiệu ứng Standby Phase: Khai báo 1 Loại Quái Thú để khóa hiệu ứng trong lượt
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetRange(LOCATION_GRAVE)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e2:SetCode(EVENT_PHASE+PHASE_STANDBY)
+	e2:SetRange(LOCATION_SZONE)
 	e2:SetCountLimit(1,{id,1})
-	e2:SetCost(Cost.SelfBanish)
-	e2:SetTarget(s.thtg)
-	e2:SetOperation(s.thop)
+	e2:SetTarget(s.distg)
+	e2:SetOperation(s.disop)
 	c:RegisterEffect(e2)
 
-	-- Effect 3: When a Sky Striker monster battles an opponent's monster (while 3+ Spells in GY)
+	-- [3] Hiệu ứng trong Mộ (Main Phase): Bỏ bản thân từ Mộ -> Thêm 1 Phép "Sky Striker" từ Deck lên tay
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetCategory(CATEGORY_DESTROY)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_BATTLE_START)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
+	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_GRAVE)
 	e3:SetCountLimit(1,{id,2})
-	e3:SetCondition(s.descon)
-	e3:SetTarget(s.destg)
-	e3:SetOperation(s.desop)
+	e3:SetCost(aux.bfgcost)
+	e3:SetTarget(s.thtg)
+	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
+
+	-- [4] Hiệu ứng chiến đấu: Khi quái thú "Sky Striker" chiến đấu + >=3 Phép trong Mộ -> Phá hủy 1 thẻ bài đối thủ
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,3))
+	e4:SetCategory(CATEGORY_DESTROY)
+	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e4:SetCode(EVENT_BATTLE_CONFIRM)
+	e4:SetRange(LOCATION_SZONE)
+	e4:SetCountLimit(1,{id,3})
+	e4:SetCondition(s.descon)
+	e4:SetTarget(s.destg)
+	e4:SetOperation(s.desop)
+	c:RegisterEffect(e4)
 end
 
 s.listed_series={SET_SKY_STRIKER}
-s.listed_names={id}
 
--- ============================================================
--- Effect 1: Standby Phase activation & Duel lock
--- ============================================================
-function s.actcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsPhase(PHASE_STANDBY)
+--------------------------------------------------------------------------------
+-- [1] XỬ LÝ KHI KÍCH HOẠT
+--------------------------------------------------------------------------------
+function s.activate_op(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local ge1=Effect.CreateEffect(c)
+	ge1:SetType(EFFECT_TYPE_FIELD)
+	ge1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	ge1:SetCode(EFFECT_CANNOT_ACTIVATE)
+	ge1:SetTargetRange(1,0)
+	ge1:SetValue(s.aclimit)
+	Duel.RegisterEffect(ge1,tp)
+end
+function s.aclimit(e,re,tp)
+	local rc=re:GetHandler()
+	return rc:IsMonster() and not rc:IsSetCard(SET_SKY_STRIKER)
 end
 
-function s.acttg(e,tp,eg,ep,ev,re,r,rp,chk)
+--------------------------------------------------------------------------------
+-- [2] XỬ LÝ STANDBY PHASE (Khóa chủng tộc đã chọn)
+--------------------------------------------------------------------------------
+function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RACE)
-	local rc=Duel.AnnounceRace(tp,1,RACE_ALL)
+	local allowed_races = RACE_AQUA | RACE_BEAST | RACE_BEASTWARRIOR | RACE_CREATORGOD 
+		| RACE_CYBERSE | RACE_DINOSAUR | RACE_DIVINEBEAST | RACE_DRAGON | RACE_FAIRY 
+		| RACE_FIEND | RACE_FISH | RACE_ILLUSION | RACE_INSECT | RACE_MACHINE 
+		| RACE_PLANT | RACE_PSYCHIC | RACE_PYRO | RACE_REPTILE | RACE_ROCK 
+		| RACE_SEASERPENT | RACE_SPELLCASTER | RACE_THUNDER | RACE_WARRIOR 
+		| RACE_WINGEDBEAST | RACE_WYRM | RACE_ZOMBIE
+		
+	local rc=Duel.AnnounceRace(tp, 1, allowed_races)
 	e:SetLabel(rc)
 end
 
-function s.actop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
+function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	local rc=e:GetLabel()
-
-	-- Neither player can activate the effects of monsters of that declared Type for the rest of this turn
+	local c=e:GetHandler()
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,3))
 	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
+	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetCode(EFFECT_CANNOT_ACTIVATE)
 	e1:SetTargetRange(1,1)
-	e1:SetValue(s.aclimit)
+	-- Sửa lại hàm Value để tránh lỗi trả về nil ở tham số cấu hình
+	e1:SetValue(s.edislimit)
 	e1:SetLabel(rc)
 	e1:SetReset(RESET_PHASE|PHASE_END)
 	Duel.RegisterEffect(e1,tp)
-
-	-- If this card is activated: You can only activate the effects of "Sky Striker" monsters for the rest of this duel
-	aux.RegisterClientHint(c,nil,tp,1,0,aux.Stringid(id,4))
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e2:SetCode(EFFECT_CANNOT_ACTIVATE)
-	e2:SetTargetRange(1,0)
-	e2:SetValue(s.duellimit)
-	Duel.RegisterEffect(e2,tp)
 end
 
-function s.aclimit(e,re,tp)
-	local rc=e:GetLabel()
-	local tc=re:GetHandler()
-	return re:IsActiveType(TYPE_MONSTER) and tc and tc:IsRace(rc)
+function s.edislimit(e,re,tp)
+	local rc=re:GetHandler()
+	return rc:IsMonster() and rc:IsRace(e:GetLabel())
 end
 
-function s.duellimit(e,re,tp)
-	local tc=re:GetHandler()
-	return re:IsActiveType(TYPE_MONSTER) and not (tc and tc:IsSetCard(SET_SKY_STRIKER))
-end
-
--- ============================================================
--- Effect 2: Search Sky Striker Spell
--- ============================================================
+--------------------------------------------------------------------------------
+-- [3] XỬ LÝ TỪ MỘ (Thêm Phép "Sky Striker" từ Deck lên tay)
+--------------------------------------------------------------------------------
 function s.thfilter(c)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToHand()
 end
-
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
-
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
@@ -141,29 +121,25 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- ============================================================
--- Effect 3: Destroy opponent's card when Sky Striker battles
--- ============================================================
+--------------------------------------------------------------------------------
+-- [4] XỬ LÝ KHI CHIẾN ĐẤU (Phá hủy 1 thẻ bài đối thủ nếu có >=3 Phép trong Mộ)
+--------------------------------------------------------------------------------
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-	local a=Duel.GetAttacker()
-	local d=Duel.GetAttackTarget()
-	if not d then return false end
-	if d:IsControler(tp) then a,d=d,a end
-	return a:IsControler(tp) and a:IsFaceup() and a:IsSetCard(SET_SKY_STRIKER) and d:IsControler(1-tp)
+	local tc=Duel.GetBattleMonster(tp)
+	return tc and tc:IsFaceup() and tc:IsSetCard(SET_SKY_STRIKER) 
 		and Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3
 end
-
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) end
-	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
-
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
-		Duel.Destroy(tc,REASON_EFFECT)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
+	if #g>0 then
+		Duel.HintSelection(g)
+		Duel.Destroy(g,REASON_EFFECT)
 	end
 end

@@ -1,120 +1,103 @@
--- Sky Striker Maneuver - Dual Clash
--- ID: 02772337
+-- Sky Striker Mobilize - Dual Clash
+-- ID: 90600029
 local s,id=GetID()
 function s.initial_effect(c)
+	-- Hiệu ứng 1: Thêm 1 quái thú "Sky Striker" từ Deck lên tay, nếu có >=3 Phép trong Mộ thì có thể Special Summon
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOGRAVE)
+	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+	e1:SetCondition(s.condition)
 	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
-	
+
+	-- Hiệu ứng 2: Loại bỏ từ Mộ khi quái thú "Sky Striker" chiến đấu để phá hủy 1 lá bài của đối thủ
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TOHAND)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetRange(LOCATION_SZONE)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetCategory(CATEGORY_DESTROY)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e2:SetCode(EVENT_BATTLE_CONFIRMED)
+	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,{id,1})
-	e2:SetTarget(s.thtarget)
-	e2:SetOperation(s.thoperation)
+	e2:SetCost(aux.bfgcost)
+	e2:SetCondition(s.descon)
+	e2:SetTarget(s.destg)
+	e2:SetOperation(s.desop)
 	c:RegisterEffect(e2)
-	
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetCategory(CATEGORY_DESTROY)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_ATTACK_ANNOUNCE)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetCountLimit(1,{id,2})
-	e3:SetCondition(s.descon)
-	e3:SetTarget(s.destarget)
-	e3:SetOperation(s.desoperation)
-	c:RegisterEffect(e3)
 end
+
 s.listed_series={SET_SKY_STRIKER}
 
-function s.tgfilter(c)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsAbleToGrave()
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 1
+--------------------------------------------------------------------------------
+function s.condition(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetMatchingGroupCount(Card.IsMonster,tp,LOCATION_MZONE,0,nil)==0
+		or not Duel.IsExistingMatchingCard(Card.IsLocation,tp,LOCATION_MZONE,0,1,nil,LOCATION_MZONE)
+end
+
+function s.filter(c,e,tp)
+	return c:IsSetCard(SET_SKY_STRIKER) and c:IsMonster() and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_DECK,0,0,1,nil)
-	if #g>0 then
-		Duel.SendtoGrave(g,REASON_EFFECT)
-	end
-
-	-- Giới hạn Triệu hồi Đặc biệt: chỉ được gọi quái thú "Sky Striker" trong phần còn lại của lượt
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
-	e1:SetDescription(aux.Stringid(id,3))
-	e1:SetTargetRange(1,0)
-	e1:SetTarget(s.splimit)
-	e1:SetReset(RESET_PHASE+PHASE_END)
-	Duel.RegisterEffect(e1,tp)
-end
-
-function s.splimit(e,c,sump,sumtype,sumpos,targetp,se)
-	return not c:IsSetCard(SET_SKY_STRIKER)
-end
-
-function s.thfilter(c)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToHand()
-end
-
-function s.thtarget(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
-	
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,tp,LOCATION_GRAVE)
-end
-
-function s.thoperation(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
-		Duel.SendtoHand(tc,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,tc)
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
+	if #g>0 then
+		local tc=g:GetFirst()
+		local b1=tc:IsAbleToHand()
+		local b2=Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
+			and tc:IsCanBeSpecialSummoned(e,0,tp,true,false) 
+			and Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3
+			
+		local op=0
+		if b1 and b2 then
+			op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
+		elseif b1 then
+			op=0
+		elseif b2 then
+			op=1
+		else
+			return
+		end
+		
+		if op==0 then
+			Duel.SendtoHand(tc,nil,REASON_EFFECT)
+			Duel.ConfirmCards(1-tp,tc)
+		else
+			if Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)~=0 then
+				tc:CompleteProcedure()
+			end
+		end
 	end
 end
 
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 2
+--------------------------------------------------------------------------------
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-	local ac=Duel.GetAttacker()
-	local bc=Duel.GetAttackTarget()
-	if not ac then return false end
-	local tc=nil
-	if ac:IsControler(tp) and ac:IsSetCard(SET_SKY_STRIKER) and ac:IsMonster() then
-		tc=ac
-	elseif bc and bc:IsControler(tp) and bc:IsSetCard(SET_SKY_STRIKER) and bc:IsMonster() then
-		tc=bc
-	end
-	if not tc then return false end
-	return Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3
+	local tc=Duel.GetBattleMonster(tp)
+	return tc and tc:IsFaceup() and tc:IsSetCard(SET_SKY_STRIKER)
 end
 
-function s.destarget(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) end
 	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
-	
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 	local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 
-function s.desoperation(e,tp,eg,ep,ev,re,r,rp)
+function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if tc and tc:IsRelateToEffect(e) then
 		Duel.Destroy(tc,REASON_EFFECT)
