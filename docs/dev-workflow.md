@@ -84,7 +84,7 @@ Menu bấm số rồi Enter:
  0. Thoat
 ```
 
-- Mục 1: script tự hỏi GitHub lấy danh sách nhánh (API công khai, không cần đăng nhập) và hiện `develop` cùng các nhánh `engine/*`; bấm `a` để xem tất cả nhánh, `t` để nhập tên nhánh bằng tay, hoặc bấm số để chọn. Nhánh đang test có dấu `<- dang test`. Không lấy được danh sách (mất mạng, hết hạn mức API của GitHub) thì script tự chuyển sang hỏi tên nhánh.
+- Mục 1: script tự hỏi GitHub lấy danh sách nhánh (API công khai, không cần đăng nhập) và hiện tất cả nhánh (`develop`, `master` đứng đầu, các nhánh khác như `engine/*`, `dev/*`, `fix/*`, `chore/*` xếp theo tên); bấm `t` để nhập tên nhánh bằng tay, hoặc bấm số để chọn. Nhánh đang test có dấu `<- dang test`. Không lấy được danh sách (mất mạng, hết hạn mức API của GitHub) thì script tự chuyển sang hỏi tên nhánh.
 - Mục 3 và 4: đường dẫn game được hỏi một lần khi script không tự tìm ra, rồi lưu ở `%APPDATA%/TTFCustomCards/game-dir.txt`; đổi bằng mục 3, xóa bằng mục 4. Thứ tự tìm clone: tham số `-RepoDir`/`-GameDir` > đường dẫn đã lưu > clone chứa chính script này (tester) > biến `EDOPRO_DIR` > `F:/Game/ProjectIgnis`.
 - Không muốn mở menu thì truyền tham số:
 
