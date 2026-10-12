@@ -31,9 +31,11 @@ Cả hai loại phải được đăng ký bằng `python tools/manage_harness.p
 
 ## 3. CDB
 
-### 3.1 Schema
+### 3.1 Cơ chế CDB linh hoạt & Schema
 
-`card-data/c<passcode>.json` là nguồn dữ liệu duy nhất; `tools/manage_db.py` biên dịch toàn bộ specs vào `cdb/card-data.cdb` theo schema và cách đóng gói của Datacorn (editor CDB của ProjectIgnis).
+EDOPro tự động quét và nạp **mọi file `*.cdb`** trong thư mục `cdb/`. Dự án hỗ trợ 2 cơ chế:
+1. **File CDB riêng cho Archetype / Dev:** Dev có thể tự tạo và duy trì file `.cdb` riêng của mình (ví dụ `cdb/labrynth.cdb`, `cdb/nightbloom.cdb`...), chỉnh sửa bằng DataEditorX hoặc SQLite GUI. Cách này giúp tránh 100% nguy cơ merge conflict database khi mở PR.
+2. **Luồng tự động qua JSON Specs:** Khai báo tại `card-data/c<passcode>.json` và dùng `tools/manage_db.py` biên dịch vào `cdb/card-data.cdb` theo schema và cách đóng gói của Datacorn (editor CDB của ProjectIgnis).
 
 - **Bảng `datas`:**
   - `id`: passcode, phải khớp tên file.

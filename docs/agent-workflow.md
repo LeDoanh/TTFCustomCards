@@ -82,4 +82,8 @@ Sau khi các bước tĩnh đạt, `verify` copy ảnh queue thành `pics/<ID>.j
 
 ## 6. Trước khi commit
 
-Review `git diff --check` và `git diff --stat`. Thay đổi CDB theo `docs/agent-rules.md` §3.4. Quy tắc commit nằm trong `AGENTS.md`; nhánh, PR và đồng bộ với `develop` nằm trong `docs/dev-workflow.md`.
+Review `git diff --check` và `git diff --stat`. Thay đổi CDB theo `docs/agent-rules.md` §3.4:
+- **Nếu dùng CDB riêng:** gom file `script/c<ID>.lua`, `pics/<ID>.jpg` và chính file `cdb/<Tên_Engine>.cdb` của bạn.
+- **Nếu dùng luồng JSON specs:** gom file `card-data/c<ID>.json`, `script/c<ID>.lua`, `pics/<ID>.jpg`, `cdb/card-data.cdb` và `feature_list.json`.
+
+Nguyên tắc làm việc: **1 Nhánh = 1 Archetype / 1 Dev** (code mới, fix bug, sửa script đều trên nhánh này). Quy tắc commit nằm trong `AGENTS.md`; nhánh, PR và đồng bộ với `develop` nằm trong `docs/dev-workflow.md`.

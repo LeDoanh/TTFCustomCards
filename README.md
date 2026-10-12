@@ -59,7 +59,7 @@ tools/           — Công cụ CLI, validator và templates:
 card-data/       — Card specs định dạng JSON
 cdb/             — Mọi database và strings.conf:
   ├── card-data.cdb — Database sinh từ card-data/
-  ├── *.cdb         — Dữ liệu CDB khác (legacy & cộng đồng)
+  ├── *.cdb         — Database riêng của từng dev/archetype & cộng đồng
   └── strings.conf  — Tên archetype hiển thị trong game
 ```
 

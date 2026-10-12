@@ -1,57 +1,71 @@
 # Quy trình phát triển nhóm
 
-Dành cho mọi người cùng làm trên repo này: mỗi dev phụ trách một engine (archetype), làm trên nhánh riêng, test trên EDOPro của mình, rồi tích hợp và phát hành theo phiên bản. Dev là collaborator có quyền Write; chủ repo (maintainer) duyệt và merge mọi PR. Tạo/sửa từng card theo `docs/agent-workflow.md`; ma trận kịch bản duel theo `docs/game-testing-workflow.md`; lệnh chung và quy tắc commit nằm trong `AGENTS.md`. Dev dùng GitHub Desktop xem `docs/github-desktop-guide.md`.
+Dành cho mọi người cùng làm trên repo này: mỗi dev phụ trách một engine (archetype), làm trên nhánh riêng, test trên EDOPro của mình, rồi tích hợp và phát hành theo phiên bản. Dev là collaborator có quyền Write; chủ repo (maintainer) duyệt và merge mọi PR. Tạo/sửa từng card theo `docs/agent-workflow.md`; ma trận kịch bản duel theo `docs/game-testing-workflow.md`; cẩm nang toàn diện dành cho người mới xem [Tutorial_Custom_Card.docx](Tutorial_Custom_Card.docx); lệnh chung và quy tắc commit nằm trong `AGENTS.md`. Dev dùng GitHub Desktop xem `docs/github-desktop-guide.md`.
 
 ## 1. Mô hình nhánh
 
+> **NGUYÊN TẮC CỐT LÕI: 1 NHÁNH = 1 ARCHETYPE (HOẶC 1 DEV)**  
+> Mỗi dev tạo duy nhất 1 nhánh làm việc cho Archetype mình phụ trách (ví dụ `engine/Labrynth`) hoặc nhánh mang tên cá nhân (`dev/<TênDev>`).  
+> **Toàn bộ quá trình:** viết card mới, chỉnh sửa hiệu ứng (fix bug), sửa script Lua, cập nhật ảnh artwork, quản lý file CDB, và test duel cùng tester... **ĐỀU LÀM TẬP TRUNG TRÊN CHÍNH NHÁNH NÀY!**  
+> Tuyệt đối không tạo nhánh vụn vặt lẻ tẻ cho mỗi lần sửa lỗi hay mỗi card mới. Khi cả đợt card đã hoàn thiện và test đạt, mới mở 1 PR từ nhánh đó vào `develop`.
+
 | Nhánh | Vai trò | Ai ghi vào |
 | :--- | :--- | :--- |
-| `master` | Bản phát hành. EDOPro của người chơi tự kéo nhánh này (`should_update: true`, xem README), nên mọi commit ở đây tới tay họ ngay | Chỉ PR phát hành/hotfix do maintainer merge, mỗi lần kèm tag `vX.Y.Z` |
-| `develop` | Nhánh tích hợp: gom mọi thay đổi đã test, chờ phát hành | Chỉ qua PR đã duyệt |
-| `engine/<Engine>` | Nhánh dài hạn của một engine: mọi card của engine đó, sống suốt thời gian engine còn được phát triển | Owner của engine |
-| `fix/<Engine>-<chủ đề>` | Sửa card của engine do người khác làm; owner review | Người sửa |
-| `chore/<chủ đề>` | Đăng ký engine, tools, docs, cập nhật EDOPro | Maintainer hoặc dev |
+| `master` | Bản phát hành chính thức. EDOPro của người chơi tự kéo nhánh này (`should_update: true`), nên mọi commit ở đây tới tay họ ngay | Chỉ PR phát hành/hotfix do maintainer merge, mỗi lần kèm tag `vX.Y.Z` |
+| `develop` | Nhánh tích hợp trung tâm: gom mọi thay đổi đã test của các dev, chờ phát hành | Chỉ qua PR đã duyệt (bắt buộc Merge Commit) |
+| `engine/<Engine>` (hoặc `dev/<Dev>`) | Nhánh làm việc duy nhất và dài hạn: toàn bộ card mới, fix bug, database và ảnh đều làm trên nhánh này | Owner của engine / Dev |
+| `chore/claim-<Engine>` | Nhánh ngắn hạn: chỉ dùng để đăng ký archetype mới trước khi bắt đầu | Dev đăng ký |
 | `hotfix/<chủ đề>` | Sửa gấp bản đã phát hành, tách từ `master` | Maintainer |
 
-Mỗi engine có một nhánh `engine/<Engine>` (ví dụ `engine/Labrynth`, `engine/Blue_Eye`), tách từ `develop` sau khi engine đã đăng ký (mục 2). Owner cứ commit và push lên đó; mỗi lần xong một đợt card đã test thì mở PR vào `develop`, merge xong nhánh vẫn dùng tiếp. Nhánh sống lâu không phải vấn đề nếu giữ ba điều:
+Mỗi engine có một nhánh dài hạn `engine/<Engine>` (ví dụ `engine/Labrynth`, `engine/Nightbloom`), tách từ `origin/develop` sau khi engine đã đăng ký (mục 2). Owner cứ commit và push thoải mái lên đó; mỗi lần xong một đợt card đã test thì mở PR vào `develop`, merge xong nhánh vẫn dùng tiếp cho các đợt phát triển tiếp theo. Giữ ba điều cốt lõi:
 
 1. PR vào `develop` dùng **Merge commit**, không dùng squash. Squash viết lại lịch sử, nên nhánh dùng lại sẽ báo xung đột và commit trùng ở các PR sau.
-2. Merge `origin/develop` về nhánh thường xuyên (mục 5), mỗi lần bắt đầu làm việc, để xung đột `card-data.cdb` đến từng ít một thay vì dồn lại.
+2. Merge `origin/develop` về nhánh thường xuyên (mục 5) mỗi khi bắt đầu làm việc để cập nhật code mới nhất từ các dev khác.
 3. Khi PR đang mở, chỉ push commit sửa theo góp ý. Mọi commit đẩy lên nhánh đều vào PR đang mở, nên việc mới để dưới máy hoặc đợi PR merge.
 
-Nhánh `fix/`, `chore/`, `hotfix/` ngắn hạn: merge xong không dùng lại. Mọi nhánh được giữ trên GitHub sau merge (không bật tự xóa nhánh); engine làm xong thì chủ repo xóa tay nhánh `engine/` của nó.
-
-Dev (quyền Write) không push thẳng được vào `master` và `develop`. Chủ repo có quyền bypass nên push thẳng được, dùng cho sửa tài liệu hoặc hotfix gấp; thay đổi của dev và bản phát hành vẫn đi qua PR để có review và CI.
+Dev (quyền Write) không push thẳng được vào `master` và `develop`. Thay đổi của dev và bản phát hành luôn đi qua Pull Request để có review và CI.
 
 Giữ `master` làm default branch trên GitHub: clone mới của EDOPro nhận nhánh mặc định, đổi sang `develop` thì người chơi mới sẽ nhận bản chưa phát hành.
 
 ## 2. Phân bổ engine
 
-Mỗi engine (archetype trong `feature_list.json`) có đúng một owner. Chỉ owner sửa card trong passcode range của engine đó; người khác muốn đổi thì mở PR `fix/` và owner review. Engine có CDB riêng trong `cdb/` (Nightbloom, Madoka...) là dữ liệu của dev khác, không thuộc quy trình này.
+Mỗi engine (archetype trong `feature_list.json`) có đúng một owner phụ trách. Chỉ owner sửa card trong passcode range của engine đó.
 
 Nhận engine mới, trước khi tạo card nào:
 
-1. Mở issue `Engine: <Name>`, gán owner, ghi danh sách effect và nguồn. Issue là sổ phân bổ; không ghi owner vào `feature_list.json` vì tool quản lý file đó. Đổi người phụ trách thì đổi assignee, passcode range giữ nguyên vì gắn vào engine.
-2. Owner tách `chore/claim-<Name>` từ `develop` mới nhất, chạy `python tools/manage_harness.py archetype add <Name>` (kèm setcode nếu là archetype official), commit đúng ba file tool đã đổi: `feature_list.json`, `script/constants.lua`, `cdb/strings.conf`.
-3. Maintainer merge PR đó vào `develop` **trước** khi người khác nhận engine. Tool chọn setcode và range trống theo working tree của nhánh hiện tại, nên hai người đăng ký song song sẽ nhận cùng setcode; đăng ký tuần tự qua `develop` là cách tránh trùng.
-4. Owner tách `engine/<Name>` từ `develop` đã có đăng ký rồi mới tạo card. Nhánh này dùng cho cả engine.
+1. Mở issue `Engine: <Name>`, gán owner, ghi danh sách effect và nguồn.
+2. Owner tách `chore/claim-<Name>` từ `develop` mới nhất, chạy `python tools/manage_harness.py archetype add <Name>` (kèm setcode nếu là archetype official), commit ba file tool đã đổi: `feature_list.json`, `script/constants.lua`, `cdb/strings.conf`.
+3. Maintainer merge PR đó vào `develop` **trước** khi người khác nhận engine.
+4. Owner tách `engine/<Name>` từ `develop` đã có đăng ký rồi mới tạo card. Nhánh này dùng xuyên suốt cho cả engine.
 
-## 3. Vòng làm việc của owner
+## 3. Vòng làm việc của owner & Cơ chế CDB linh hoạt
+
+EDOPro nạp tự động **TẤT CẢ** các file `*.cdb` nằm trong thư mục `cdb/`. Vì vậy, dự án hỗ trợ 2 cơ chế quản lý database linh hoạt:
+
+- **Lựa chọn 1 (Khuyến khích cho Dev độc lập): Tự làm file CDB riêng cho Archetype / Cá nhân**  
+  Dev có thể tự tạo và duy trì file CDB riêng (ví dụ `cdb/labrynth.cdb`, `cdb/nightbloom.cdb`...), dùng DataEditorX hoặc SQLite GUI tùy ý để chỉnh sửa trực tiếp.  
+  *Ưu điểm:* **Hoàn toàn triệt tiêu xung đột merge conflict file database** với các dev khác khi mở PR vào `develop`! Khi commit chỉ cần gom: `script/c<ID>.lua`, `pics/<ID>.jpg` và file `cdb/<Tên_Engine>.cdb` của mình.
+
+- **Lựa chọn 2: Quản lý tập trung qua JSON Specs**  
+  Khai báo tại `card-data/c<ID>.json`, sau đó chạy `python tools/manage_harness.py verify <ID>` hoặc `python tools/manage_db.py compile` để tự động sinh `cdb/card-data.cdb`.
 
 ```powershell
 git fetch origin
 git switch -c engine/Labrynth origin/develop      # lần đầu; các lần sau: git switch engine/Labrynth
 # tạo card, verify, test theo agent-workflow.md và game-testing-workflow.md
+# Nếu dùng CDB riêng:
+git add script/c<ID>.lua pics/<ID>.jpg cdb/labrynth.cdb
+# Nếu dùng luồng JSON tự gen:
 git add card-data/c<ID>.json script/c<ID>.lua pics/<ID>.jpg cdb/card-data.cdb feature_list.json
+
 git commit -m "[<Git user>] [Feature]: <English description>"
 git push -u origin HEAD
 ```
 
-- Add từng file của thay đổi, không `git add -A`.
-- Một nhánh chỉ chứa file của một engine (`card-data/c<ID>.json`, `script/c<ID>.lua`, `pics/<ID>` trong range của engine), cùng `cdb/card-data.cdb` và phần engine đó trong `feature_list.json`. Sửa file dùng chung (`tools/`, `docs/`, template, `script/constants.lua`) thì tách sang nhánh `chore/` riêng.
-- Không dùng "Add files via upload" hay sửa trên web: bỏ qua `verify` và làm CDB lệch JSON.
-- Game chỉ thấy những gì đã push (mục 4): `verify` sinh lại `cdb/card-data.cdb`, rồi commit cả file này và artwork trước khi `git push`. Nhánh làm việc ở repo gốc, không cần fork.
-- Mỗi commit theo định dạng commit của `AGENTS.md`: Merge commit giữ nguyên từng commit của dev trong lịch sử `develop`.
+- Add từng file của thay đổi (bằng dấu `+` trong Source Control của VSCode), không `git add -A`.
+- Không dùng "Add files via upload" hay sửa trên web.
+- Game chỉ thấy những gì đã push (mục 4): file CDB và artwork phải nằm trong commit trước khi `git push`.
+- Mỗi commit theo định dạng commit của `AGENTS.md`.
 
 ## 4. Test trên nhánh
 
