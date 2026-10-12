@@ -8,7 +8,7 @@
     Script sua dung dong "fetch =" cua remote origin trong .git/config, khong can git trong PATH.
 
     Chay khong tham so se mo menu:
-      1. Chon nhanh de test: lay danh sach nhanh tu GitHub (API cong khai, khong can dang nhap),
+      1. Chon nhanh de test: lay danh sach tat ca nhanh tu GitHub (API cong khai, khong can dang nhap),
          chon bang so; neu khong lay duoc danh sach thi nhap ten nhanh bang tay
       2. Ve ban nguoi choi (bo chon nhanh)
       3. Doi duong dan game / 4. Xoa duong dan game da luu (luu o %APPDATA%\TTFCustomCards\game-dir.txt)
@@ -239,27 +239,21 @@ function Select-Branch($clone) {
     $pinned = Get-PinnedBranch $origin
     $first = @(@('develop', 'master') | Where-Object { $names -contains $_ })
     $rest = @($names | Where-Object { $first -notcontains $_ } | Sort-Object)
-    $everything = @($first) + @($rest)
-    $common = @($names | Where-Object { $_ -eq 'develop' -or $_ -like 'engine/*' } | Sort-Object)
-    $showAll = ($common.Count -eq 0)
+    $list = @($first) + @($rest)
 
     while ($true) {
-        if ($showAll) { $list = @($everything) } else { $list = @($common) }
         Write-Host ""
-        if ($showAll) { Write-Host "Tat ca nhanh tren GitHub:" -ForegroundColor Cyan }
-        else { Write-Host "Nhanh develop va engine/*:" -ForegroundColor Cyan }
+        Write-Host "Tat ca nhanh tren GitHub:" -ForegroundColor Cyan
         for ($n = 0; $n -lt $list.Count; $n++) {
             $mark = if ($list[$n] -eq $pinned) { "  <- dang test" } else { "" }
             Write-Host ("{0,4}. {1}{2}" -f ($n + 1), $list[$n], $mark)
         }
-        Write-Host "   a. Chuyen giua danh sach rut gon / tat ca nhanh"
         Write-Host "   t. Nhap ten nhanh bang tay"
         Write-Host "   0. Quay lai"
         $answer = Read-Host "Chon"
         if ($null -eq $answer) { return }
         $answer = $answer.Trim()
         if ($answer -eq "" -or $answer -eq "0") { return }
-        if ($answer -eq "a") { $showAll = -not $showAll; continue }
         if ($answer -eq "t") { Read-BranchNameAndPin $clone; return }
         $num = 0
         if ([int]::TryParse($answer, [ref]$num) -and $num -ge 1 -and $num -le $list.Count) {
