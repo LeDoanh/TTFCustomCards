@@ -8,12 +8,12 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-	-- Luôn được xem là "Nightbloom"
+	-- Luôn được xem là "Flower Spirit"
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetCode(EFFECT_ADD_SETCODE)
-	e0:SetValue(0xb24)
+	e0:SetValue(0x702)
 	c:RegisterEffect(e0)
 
 	-- Không thể Úp (Cannot be Set)
