@@ -64,9 +64,8 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetActivityCount(tp,ACTIVITY_SPSUMMON)==0
-		or Duel.IsExistingMatchingCard(s.splimitfilter,tp,LOCATION_EXTRA,0,1,nil) end
-	-- Khóa Special Summon chỉ triệu hồi quái thú "Sky Striker" trong cả lượt
+	if chk==0 then return true end
+	-- Khóa Special Summon: Không thể triệu hồi đặc biệt quái thú nào ngoại trừ quái thú "Sky Striker" trong suốt phần còn lại của lượt
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetDescription(aux.Stringid(id,2))
 	e1:SetType(EFFECT_TYPE_FIELD)
@@ -78,12 +77,8 @@ function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.RegisterEffect(e1,tp)
 end
 
-function s.splimitfilter(c)
-	return c:IsSetCard(SET_SKY_STRIKER)
-end
-
 function s.splimit(e,c,sump,sumtype,sumpos,target_p,se)
-	return c:IsLocation(LOCATION_EXTRA) and not c:IsSetCard(SET_SKY_STRIKER)
+	return not c:IsSetCard(SET_SKY_STRIKER)
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
