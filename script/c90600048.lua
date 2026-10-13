@@ -37,7 +37,7 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.lkcon)
-	e2:SetCost(aux.stcost)
+	e2:SetCost(s.lkcost)
 	e2:SetTarget(s.lktg)
 	e2:SetOperation(s.lkop)
 	c:RegisterEffect(e2)
@@ -119,23 +119,12 @@ function s.lkcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():GetSequence()<5
 end
 
+function s.lkcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsReleasable() end
+	Duel.Release(c,REASON_COST)
+end
+
 function s.lkfilter(c,e,tp)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsType(TYPE_LINK)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,tp,LOCATION_EMZ)
-end
-
-function s.lktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCountFromEx(tp,tp,e:GetHandler(),TYPE_LINK)>0
-		and Duel.IsExistingMatchingCard(s.lkfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
-end
-
-function s.lkop(e,tp,eg,ep,ev,re,r,rp)
-	local zone=1<<Duel.GetLocationCountFromEx(tp,tp,nil,TYPE_LINK)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.lkfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp)
-	local tc=g:GetFirst()
-	if tc then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP,LOCATION_EMZ)
-	end
-end
+		and c:IsCanBeSpecialSummoned(e,0,tp,false,false
