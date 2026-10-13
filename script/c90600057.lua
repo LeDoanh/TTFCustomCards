@@ -24,11 +24,15 @@ function s.condition(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- KIỂM TRA QUÁI THÚ MỤC TIÊU (Level 4 "Sky Striker" monster từ Deck hoặc GY)
+-- LỌC MỤC TIÊU CƠ BẢN
 --------------------------------------------------------------------------------
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsLevel(4)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE,1-tp)
+end
+
+function s.basicfilter(c)
+	return c:IsSetCard(SET_SKY_STRIKER) and c:IsLevel(4)
 end
 
 function s.thfilter(c)
@@ -41,10 +45,9 @@ end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		-- Kiểm tra xem sân đối thủ có còn trống ít nhất 2 ô Main Monster Zone không
-		local ft=Duel.GetLocationCount(1-tp,LOCATION_MZONE)
-		if ft<2 then return false end
-		-- Cho phép lấy quái từ Deck hoặc GY
-		return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,2,nil,e,tp)
+		if Duel.GetLocationCount(1-tp,LOCATION_MZONE)<2 then return false end
+		-- Kiểm tra trong Deck hoặc GY có từ 2 quái Level 4 "Sky Striker" trở lên không
+		return Duel.IsExistingMatchingCard(s.basicfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,2,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_DECK+LOCATION_GRAVE)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
@@ -52,8 +55,7 @@ end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local ft=Duel.GetLocationCount(1-tp,LOCATION_MZONE)
-	if ft<2 then return end
+	if Duel.GetLocationCount(1-tp,LOCATION_MZONE)<2 then return end
 	
 	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,e,tp)
 	if #g>=2 then
