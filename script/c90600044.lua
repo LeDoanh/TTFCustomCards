@@ -1,5 +1,5 @@
 -- Sky Striker Ace - Zephyr
--- ID: 90600044 (Bạn có thể điều chỉnh lại ID trong file .cdb và tên file cho khớp)
+-- ID: 90600044
 local s,id=GetID()
 function s.initial_effect(c)
 	-- Hiệu ứng 1: Khi Phép hoặc hiệu ứng "Sky Striker" được kích hoạt -> Special Summon từ tay hoặc Mộ (bị trục xuất khi rời sân)
@@ -40,7 +40,8 @@ s.listed_series={SET_SKY_STRIKER}
 --------------------------------------------------------------------------------
 function s.spcon1(e,tp,eg,ep,ev,re,r,rp)
 	local rc=re:GetHandler()
-	return rc:IsSetCard(SET_SKY_STRIKER) and rc:IsSpell() and re:IsHasProperty(EFFECT_FLAG_ACTIVATE)
+	-- Kiểm tra lá bài kích hoạt là Phép "Sky Striker" hoặc hiệu ứng của lá "Sky Striker"
+	return rp==tp and rc:IsSetCard(SET_SKY_STRIKER) and (re:IsActiveType(TYPE_SPELL) or rc:IsSpell())
 end
 
 function s.sptg1(e,tp,eg,ep,ev,re,r,rp,chk)
