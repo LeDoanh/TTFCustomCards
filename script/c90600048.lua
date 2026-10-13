@@ -107,7 +107,8 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 				Duel.BreakEffect()
 				local token=Duel.CreateToken(tp,90600049)
 				if token then
-					Duel.SpecialSummon(token,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE)
+					Duel.SpecialSummonStep(token,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE)
+					Duel.SpecialSummonComplete()
 				end
 			end
 		end
