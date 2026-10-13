@@ -4,27 +4,11 @@
 -- Type     : Spell / Normal
 -- Archetype: Nightbloom (0xb24), Flower Spirit (0x702)
 -- ============================================================
--- Effect 0: Always treated as a "Flower Spirit" card.
--- Effect 1: Cannot be Set. You can activate this card from your
---           hand during your opponent's turn.
--- Effect 2: If this card is activated during your turn: Add 1
---           "Flower Spirit" or "Nightbloom" Spell from your Deck
---           to your hand, then banish 1 card from your hand.
--- Effect 3: If this card is activated during your opponent's turn:
---           Special Summon 1 "Flower Spirit" or "Nightbloom" Fusion,
---           Synchro, or Xyz Monster from your Extra Deck, ignoring
---           its Summoning conditions, then banish 1 card from your
---           hand for every 3 Levels or Ranks of that monster (round down).
--- Oath    : You can only activate 1 "Nightbloom – Welcome Nightbloom!" per turn.
--- Restriction: You cannot use cards in your Deck, except Spell Cards.
--- ============================================================
 
 local s,id=GetID()
 
 function s.initial_effect(c)
-	-- ============================================================
-	-- Effect 0 — Always treated as a "Flower Spirit" card
-	-- ============================================================
+	-- Effect 0: Always treated as a "Flower Spirit" card
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -32,22 +16,19 @@ function s.initial_effect(c)
 	e0:SetValue(0x702)
 	c:RegisterEffect(e0)
 
-	-- ============================================================
-	-- Effect 1 — Cannot be Set
-	-- ============================================================
+	-- Effect 1: Cannot be Set
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
-	-- ============================================================
-	-- Effect 1b — Activate from hand during opponent's turn
-	-- ============================================================
+	-- Effect 1b: Activate from hand during opponent's turn
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e2:SetCode(EFFECT_BECOME_QUICK)
 	e2:SetRange(LOCATION_HAND)
+	e2:SetCondition(s.quickcon)
 	c:RegisterEffect(e2)
 
 	local e3=Effect.CreateEffect(c)
@@ -55,11 +36,10 @@ function s.initial_effect(c)
 	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e3:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
 	e3:SetRange(LOCATION_HAND)
+	e3:SetCondition(s.quickcon)
 	c:RegisterEffect(e3)
 
-	-- ============================================================
-	-- Effect 2 — Your turn: Normal Spell activation
-	-- ============================================================
+	-- Effect 2: Your turn - Normal Spell activation
 	local e4=Effect.CreateEffect(c)
 	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_REMOVE)
 	e4:SetType(EFFECT_TYPE_ACTIVATE)
@@ -71,9 +51,7 @@ function s.initial_effect(c)
 	e4:SetOperation(s.selfop)
 	c:RegisterEffect(e4)
 
-	-- ============================================================
-	-- Effect 3 — Opponent's turn: Activation from hand onto field
-	-- ============================================================
+	-- Effect 3: Opponent's turn - Activation from hand onto field
 	local e5=Effect.CreateEffect(c)
 	e5:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_REMOVE)
 	e5:SetType(EFFECT_TYPE_ACTIVATE)
@@ -87,9 +65,10 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
--- ============================================================
--- Deck Restriction: Lock Deck cards except Spell Cards
--- ============================================================
+function s.quickcon(e)
+	return Duel.GetTurnPlayer()~=e:GetHandlerPlayer()
+end
+
 function s.lock_deck(c,tp)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
@@ -149,11 +128,9 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	s.lock_deck(e:GetHandler(),tp)
 end
 
--- ============================================================
--- Effect 2: Your Turn Logic
--- ============================================================
 function s.selfcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==tp
+	local ph=Duel.GetCurrentPhase()
+	return Duel.GetTurnPlayer()==tp and (ph==PHASE_MAIN1 or ph==PHASE_MAIN2) and Duel.GetCurrentChain()==0
 end
 
 function s.thfilter(c)
@@ -184,9 +161,6 @@ function s.selfop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- ============================================================
--- Effect 3: Opponent's Turn Logic
--- ============================================================
 function s.oppcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp
 end
