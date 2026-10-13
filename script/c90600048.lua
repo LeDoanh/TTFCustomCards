@@ -27,7 +27,7 @@ function s.initial_effect(c)
 		Duel.RegisterEffect(ge1,0)
 	end
 
-	-- Hiệu ứng 2: Ở trong Main Monster Zone (Hiệu ứng Nhanh) - Hiến tế lá này để gọi 1 quái thú Link "Sky Striker Ace" từ Extra Deck vào Extra Monster Zone
+	-- Hiệu ứng 2: Ở trong Main Monster Zone (Hiệu ứng Nhanh) - Hiến tế lá này để gọi 1 quái thú Link "Sky Striker Ace" từ Extra Deck
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -127,4 +127,20 @@ end
 
 function s.lkfilter(c,e,tp)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsType(TYPE_LINK)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false
+		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+end
+
+function s.lktg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCountFromEx(tp,tp,e:GetHandler(),TYPE_LINK)>0
+		and Duel.IsExistingMatchingCard(s.lkfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+end
+
+function s.lkop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,s.lkfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp)
+	local tc=g:GetFirst()
+	if tc then
+		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+	end
+end
