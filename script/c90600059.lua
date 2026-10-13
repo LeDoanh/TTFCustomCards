@@ -14,17 +14,21 @@ function s.initial_effect(c)
 	e1:SetValue(aux.lnklimit)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 1: Tất cả quái thú ngửa mặt trên sân trở thành quái thú DARK Machine
+	-- Hiệu ứng 1A: Tất cả quái thú ngửa mặt trên sân trở thành thuộc tính DARK
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetCode(EFFECT_CHANGE_ATTRIBUTE)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
-	e2:SetTarget(s.attrtg)
 	e2:SetValue(ATTRIBUTE_DARK)
 	c:RegisterEffect(e2)
-	local e3=e2:Clone()
+
+	-- Hiệu ứng 1B: Tất cả quái thú ngửa mặt trên sân trở thành chủng tộc Machine
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_FIELD)
 	e3:SetCode(EFFECT_CHANGE_RACE)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
 	e3:SetValue(RACE_MACHINE)
 	c:RegisterEffect(e3)
 
@@ -55,13 +59,6 @@ end
 s.listed_series={SET_SKY_STRIKER}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: ĐỔI THUỘC TÍNH VÀ CHỦNG TỘC CỦA QUÁI THÚ TRÊN SÂN
---------------------------------------------------------------------------------
-function s.attrtg(e,c)
-	return c:IsFaceup()
-end
-
---------------------------------------------------------------------------------
 -- HIỆU ỨNG 2: VÔ HIỆU HÓA KÍCH HOẠT VÀ PHÁ HỦY 1 CARD TRÊN SÂN
 --------------------------------------------------------------------------------
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
@@ -81,7 +78,6 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstCardFromDeck()
 	if Duel.NegateActivation(ev) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 		local g=Duel.SelectMatchingCard(tp,nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
