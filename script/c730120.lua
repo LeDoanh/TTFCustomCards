@@ -1,6 +1,6 @@
 -- ============================================================
 -- Card Name: The Flower Blooms Late
--- Passcode : <ID_CỦA_LÁ> (Thay bằng ID bạn chọn trong database)
+-- Passcode : 730120
 -- Type     : Spell / Normal
 -- Archetype: Flower Spirit (0x702), Nightbloom (0xb24)
 -- ============================================================
@@ -8,7 +8,7 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-	-- Luôn được xem là cả "Flower Spirit" và "Nightbloom"
+	-- Effect 0: Luôn được xem là cả "Flower Spirit" và "Nightbloom"
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -20,44 +20,47 @@ function s.initial_effect(c)
 	e0b:SetValue(0xb24)
 	c:RegisterEffect(e0b)
 
-	-- Không thể Úp (Cannot be Set)
+	-- Effect 1: Cannot be Set
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_SSET)
 	c:RegisterEffect(e1)
 
-	-- Cho phép kích hoạt từ tay lên sân trong lượt đối thủ
+	-- Biến thành Quick-Play CHỈ TRONG LƯỢT ĐỐI THỦ
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e2:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
+	e2:SetCode(EFFECT_BECOME_QUICK)
 	e2:SetRange(LOCATION_HAND)
-	e2:SetCondition(s.handcon)
+	e2:SetCondition(s.quickcon)
 	c:RegisterEffect(e2)
 
-	-- ============================================================
-	-- Hiệu ứng kích hoạt chính (Đặt lên sân và giải quyết hiệu ứng)
-	-- ============================================================
+	-- Kích hoạt từ tay không cần Set CHỈ TRONG LƯỢT ĐỐI THỦ
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_ACTIVATE)
-	e3:SetCode(EVENT_FREE_CHAIN)
-	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-	e3:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
-	e3:SetCondition(s.actcon)
-	e3:SetCost(s.cost)
-	e3:SetTarget(s.target)
-	e3:SetOperation(s.activate)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e3:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
+	e3:SetRange(LOCATION_HAND)
+	e3:SetCondition(s.quickcon)
 	c:RegisterEffect(e3)
+
+	-- Hiệu ứng kích hoạt chính
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_ACTIVATE)
+	e4:SetCode(EVENT_FREE_CHAIN)
+	e4:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
+	e4:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
+	e4:SetCondition(s.actcon)
+	e4:SetCost(s.cost)
+	e4:SetTarget(s.target)
+	e4:SetOperation(s.activate)
+	c:RegisterEffect(e4)
 end
 
--- Điều kiện kích hoạt từ tay: Chỉ áp dụng trong lượt đối thủ
-function s.handcon(e)
+function s.quickcon(e)
 	return Duel.GetTurnPlayer()~=e:GetHandlerPlayer()
 end
 
--- Điều kiện kích hoạt tổng thể:
--- Lượt mình: Bắt buộc Main Phase và Chain Link = 0 (Normal Spell chuẩn, không nháy chain)
--- Lượt đối thủ: Tự do
 function s.actcon(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetTurnPlayer()==tp then
 		local ph=Duel.GetCurrentPhase()
@@ -67,7 +70,6 @@ function s.actcon(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Restrict: "You cannot activate cards from your Deck, except Spell Cards."
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
 	local e1=Effect.CreateEffect(e:GetHandler())
@@ -87,18 +89,19 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	local is_opp_turn=(Duel.GetTurnPlayer()~=tp)
 	if chk==0 then
 		if is_opp_turn then
-			-- Lượt đối thủ: GY và Banishment của cả 2 bên đều phải không có bài (0 lá)
-			return Duel.GetFieldGroupCount(tp,LOCATION_GRAVE+LOCATION_REMOVED,LOCATION_GRAVE+LOCATION_REMOVED)==0
+			-- Cả 2 bên đều không có bài ở GY và Banishment
+			local my_gy_rm=Duel.GetFieldGroupCount(tp,LOCATION_GRAVE+LOCATION_REMOVED,0)
+			local opp_gy_rm=Duel.GetFieldGroupCount(tp,0,LOCATION_GRAVE+LOCATION_REMOVED)
+			return my_gy_rm==0 and opp_gy_rm==0
 		else
 			return true
 		end
 	end
 
 	if not is_opp_turn then
-		-- Lượt mình: Cho chọn 1 trong 2 hiệu ứng
 		local op=Duel.SelectEffect(tp,
-			{true,aux.Stringid(id,0)},  -- Any card sent to GY is banished instead
-			{true,aux.Stringid(id,1)}) -- Any card that would be banished is sent to GY instead
+			{true,aux.Stringid(id,0)},
+			{true,aux.Stringid(id,1)})
 		e:SetLabel(op)
 	end
 end
@@ -108,7 +111,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local is_opp_turn=(Duel.GetTurnPlayer()~=tp)
 
 	if is_opp_turn then
-		-- Lượt đối thủ: Phủ nhận mọi effect kích hoạt tại GY hoặc Banishment đến hết Phase
+		-- Phủ nhận mọi effect kích hoạt tại GY hoặc Banishment đến hết Phase
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e1:SetCode(EVENT_CHAIN_SOLVING)
@@ -117,10 +120,9 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_PHASE+Duel.GetCurrentPhase())
 		Duel.RegisterEffect(e1,tp)
 	else
-		-- Lượt mình: Áp dụng hiệu ứng đã chọn
 		local op=e:GetLabel()
 		if op==1 then
-			-- "Any card sent to the GY is banished instead." (Macro Cosmos / Dimension Shifter)
+			-- Mọi lá bài gửi xuống GY sẽ bị banish thay thế
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_FIELD)
 			e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
@@ -130,7 +132,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			e1:SetReset(RESET_PHASE+PHASE_END)
 			Duel.RegisterEffect(e1,tp)
 		elseif op==2 then
-			-- "Any card that would be banished is sent to the GY instead."
+			-- Mọi lá bài bị banish sẽ bị đưa xuống GY thay thế
 			local e2=Effect.CreateEffect(c)
 			e2:SetType(EFFECT_TYPE_FIELD)
 			e2:SetProperty(EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
@@ -144,7 +146,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Xử lý Negate trong lượt đối thủ
 function s.discon(e,tp,eg,ep,ev,re,r,rp)
 	local loc=re:GetActivateLocation()
 	return loc==LOCATION_GRAVE or loc==LOCATION_REMOVED
@@ -154,7 +155,6 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.NegateEffect(ev)
 end
 
--- Bộ lọc chuyển Banishment thành GY (Lựa chọn 2 ở lượt mình)
 function s.rmtarget(e,c)
 	return c:GetDestination()==LOCATION_REMOVED
 end
