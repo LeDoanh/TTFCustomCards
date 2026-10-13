@@ -17,10 +17,11 @@ end
 s.listed_series={SET_SKY_STRIKER}
 
 --------------------------------------------------------------------------------
--- ĐIỀU KIỆN KÍCH HOẠT: Sân mình không có quái thú nào ở Main Monster Zone
+-- ĐIỀU KIỆN KÍCH HOẠT: Sân không có quái hoặc có mặt quái thú bypass điều kiện
 --------------------------------------------------------------------------------
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0
+	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0 
+		or Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and (c:IsCode(90600059) or c:IsCode(90600003) or c:IsCode(90600024)) end,tp,LOCATION_MZONE,0,1,nil)
 end
 
 --------------------------------------------------------------------------------
@@ -44,9 +45,7 @@ end
 --------------------------------------------------------------------------------
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		-- Kiểm tra xem sân đối thủ có còn trống ít nhất 2 ô Main Monster Zone không
 		if Duel.GetLocationCount(1-tp,LOCATION_MZONE)<2 then return false end
-		-- Kiểm tra trong Deck hoặc GY có từ 2 quái Level 4 "Sky Striker" trở lên không
 		return Duel.IsExistingMatchingCard(s.basicfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,2,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_DECK+LOCATION_GRAVE)
