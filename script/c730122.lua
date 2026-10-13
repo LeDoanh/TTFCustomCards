@@ -1,10 +1,4 @@
--- ============================================================
--- Card Name: The Sanctuary of Flower - Bloom
--- Passcode : 730122
--- Type     : Spell / Normal
--- Archetype: Flower Spirit (0x702), Nightbloom (0xb24)
--- ============================================================
-
+--The Sanctuary of Flower - Bloom
 local s,id=GetID()
 
 function s.initial_effect(c)
@@ -20,38 +14,41 @@ function s.initial_effect(c)
 	e0b:SetValue(0xb24)
 	c:RegisterEffect(e0b)
 
-	-- Kích hoạt từ tay trong lượt đối thủ
+	-- Biến thành Quick-Play CHỈ TRONG LƯỢT ĐỐI THỦ
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
+	e1:SetCode(EFFECT_BECOME_QUICK)
 	e1:SetRange(LOCATION_HAND)
-	e1:SetCondition(s.handcon)
+	e1:SetCondition(s.quickcon)
 	c:RegisterEffect(e1)
 
-	-- ============================================================
-	-- Hiệu ứng kích hoạt chính
-	-- ============================================================
+	-- Kích hoạt từ tay không cần Set CHỈ TRONG LƯỢT ĐỐI THỦ
 	local e2=Effect.CreateEffect(c)
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_DRAW+CATEGORY_TOGRAVE+CATEGORY_TODECK)
-	e2:SetType(EFFECT_TYPE_ACTIVATE)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-	e2:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
-	e2:SetCondition(s.actcon)
-	e2:SetTarget(s.target)
-	e2:SetOperation(s.activate)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e2:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
+	e2:SetRange(LOCATION_HAND)
+	e2:SetCondition(s.quickcon)
 	c:RegisterEffect(e2)
+
+	-- Hiệu ứng kích hoạt chính
+	local e3=Effect.CreateEffect(c)
+	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_DRAW+CATEGORY_TOGRAVE+CATEGORY_TODECK)
+	e3:SetType(EFFECT_TYPE_ACTIVATE)
+	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
+	e3:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
+	e3:SetCondition(s.actcon)
+	e3:SetTarget(s.target)
+	e3:SetOperation(s.activate)
+	c:RegisterEffect(e3)
 end
 
--- Điều kiện kích hoạt từ tay: Chỉ trong lượt đối thủ
-function s.handcon(e)
+function s.quickcon(e)
 	return Duel.GetTurnPlayer()~=e:GetHandlerPlayer()
 end
 
--- Điều kiện kích hoạt:
--- Lượt mình: Chỉ ở Main Phase và Chain Link = 0 (Normal Spell chuẩn, không nháy chain)
--- Lượt đối thủ: Tự do
 function s.actcon(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetTurnPlayer()==tp then
 		local ph=Duel.GetCurrentPhase()
@@ -61,12 +58,10 @@ function s.actcon(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Bộ lọc cho lượt đối thủ
 function s.thfilter(c)
 	return c:IsSetCard(0xb24) and c:IsAbleToHand()
 end
 
--- Bộ lọc cho lượt của bạn
 function s.exfilter(c,tp)
 	if not (c:IsSetCard(0x702) and c:IsType(TYPE_MONSTER) and c:IsAbleToGrave()) then return false end
 	if c:IsType(TYPE_FUSION+TYPE_SYNCHRO) then
@@ -102,7 +97,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local is_opp_turn=(Duel.GetTurnPlayer()~=tp)
 
 	if is_opp_turn then
-		-- LƯỢT ĐỐI THỦ: Add 1 "Nightbloom" từ Deck/GY lên tay, rồi Draw 1 lá
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 		local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
 		if #g>0 and Duel.SendtoHand(g,nil,REASON_EFFECT)>0 then
@@ -112,7 +106,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			if Duel.Draw(tp,1,REASON_EFFECT)>0 then
 				local dc=Duel.GetOperatedGroup():GetFirst()
 				Duel.ConfirmCards(1-tp,dc)
-				-- Nếu lá rút được không phải "Nightbloom", đặt 1 lá từ tay xuống đáy Deck
 				if not dc:IsSetCard(0xb24) then
 					Duel.BreakEffect()
 					Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
@@ -125,14 +118,12 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			end
 		end
 	else
-		-- LƯỢT CỦA BẠN: Gửi 1 quái "Flower Spirit" từ Extra Deck xuống GY
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 		local g=Duel.SelectMatchingCard(tp,s.exfilter,tp,LOCATION_EXTRA,0,1,1,nil,tp)
 		local tc=g:GetFirst()
 		if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_GRAVE) then
 			Duel.BreakEffect()
 			if tc:IsType(TYPE_FUSION+TYPE_SYNCHRO) then
-				-- Fusion/Synchro: Draw cards = Level, rồi đặt bấy nhiêu lá từ tay xuống đáy Deck
 				local lv=tc:GetLevel()
 				local drawn=Duel.Draw(tp,lv,REASON_EFFECT)
 				if drawn>0 then
@@ -144,4 +135,26 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 					end
 				end
 			elseif tc:IsType(TYPE_XYZ+TYPE_LINK) then
-				-- Xyz/Link: Hiệu ứng của Spell Card add bài hoặc rút bài không thể bị negate cho đến hết lượt
+				local e1=Effect.CreateEffect(c)
+				e1:SetType(EFFECT_TYPE_FIELD)
+				e1:SetCode(EFFECT_CANNOT_INACTIVATE)
+				e1:SetValue(s.effectfilter)
+				e1:SetReset(RESET_PHASE+PHASE_END)
+				Duel.RegisterEffect(e1,tp)
+
+				local e2=Effect.CreateEffect(c)
+				e2:SetType(EFFECT_TYPE_FIELD)
+				e2:SetCode(EFFECT_CANNOT_DISEFFECT)
+				e2:SetValue(s.effectfilter)
+				e2:SetReset(RESET_PHASE+PHASE_END)
+				Duel.RegisterEffect(e2,tp)
+			end
+		end
+	end
+end
+
+function s.effectfilter(e,ct)
+	local p=e:GetHandlerPlayer()
+	local te,tp=Duel.GetChainInfo(ct,CHAININFO_TRIGGERING_EFFECT,CHAININFO_TRIGGERING_PLAYER)
+	return p==tp and te:IsActiveType(TYPE_SPELL) and (te:IsHasCategory(CATEGORY_TOHAND) or te:IsHasCategory(CATEGORY_SEARCH) or te:IsHasCategory(CATEGORY_DRAW))
+end
