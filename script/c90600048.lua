@@ -44,7 +44,7 @@ function s.initial_effect(c)
 end
 
 s.listed_series={SET_SKY_STRIKER}
-s.listed_names={90600049} -- ID đại diện cho Token "Sky Striker Ace Token" (Machine/DARK/Level 11/ATK 3000/DEF 0)
+s.listed_names={90600049}
 
 --------------------------------------------------------------------------------
 -- HÀM ĐẾM SỐ LẦN SPECIAL SUMMON CỦA ĐỐI THỦ
@@ -106,7 +106,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 				and Duel.IsPlayerCanSpecialSummonMonster(tp,90600049,SET_SKY_STRIKER,TYPES_TOKEN,3000,0,11,RACE_MACHINE,ATTRIBUTE_DARK,POS_FACEUP_DEFENSE,1-tp) then
 				Duel.BreakEffect()
 				local token=Duel.CreateToken(tp,90600049)
-				Duel.SpecialSummon(token,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE)
+				if token then
+					Duel.SpecialSummon(token,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE)
+				end
 			end
 		end
 	end
