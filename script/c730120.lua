@@ -89,7 +89,6 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	local is_opp_turn=(Duel.GetTurnPlayer()~=tp)
 	if chk==0 then
 		if is_opp_turn then
-			-- Cả 2 bên đều không có bài ở GY và Banishment
 			local my_gy_rm=Duel.GetFieldGroupCount(tp,LOCATION_GRAVE+LOCATION_REMOVED,0)
 			local opp_gy_rm=Duel.GetFieldGroupCount(tp,0,LOCATION_GRAVE+LOCATION_REMOVED)
 			return my_gy_rm==0 and opp_gy_rm==0
@@ -111,7 +110,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local is_opp_turn=(Duel.GetTurnPlayer()~=tp)
 
 	if is_opp_turn then
-		-- Phủ nhận mọi effect kích hoạt tại GY hoặc Banishment đến hết Phase
+		-- Lượt đối thủ: Negate các effect kích hoạt ở GY hoặc Banishment
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e1:SetCode(EVENT_CHAIN_SOLVING)
@@ -122,7 +121,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	else
 		local op=e:GetLabel()
 		if op==1 then
-			-- Mọi lá bài gửi xuống GY sẽ bị banish thay thế
+			-- Option 1: Any card sent to GY is banished instead
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_FIELD)
 			e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
@@ -132,17 +131,22 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			e1:SetReset(RESET_PHASE+PHASE_END)
 			Duel.RegisterEffect(e1,tp)
 		elseif op==2 then
-			-- Mọi lá bài bị banish sẽ bị đưa xuống GY thay thế
+			-- Option 2: Any card that would be banished is sent to GY instead
 			local e2=Effect.CreateEffect(c)
-			e2:SetType(EFFECT_TYPE_FIELD)
-			e2:SetProperty(EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
-			e2:SetCode(EFFECT_TO_GRAVE_REDIRECT)
-			e2:SetTargetRange(0xff,0xff)
-			e2:SetValue(LOCATION_GRAVE)
-			e2:SetTarget(s.rmtarget)
+			e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+			e2:SetCode(EVENT_REMOVE)
+			e2:SetOperation(s.send_to_gy_op)
 			e2:SetReset(RESET_PHASE+PHASE_END)
 			Duel.RegisterEffect(e2,tp)
 		end
+	end
+end
+
+-- Bắt sự kiện bài bị Banish và lập tức chuyển xuống Mộ
+function s.send_to_gy_op(e,tp,eg,ep,ev,re,r,rp)
+	local g=eg:Filter(Card.IsLocation,nil,LOCATION_REMOVED)
+	if #g>0 then
+		Duel.SendtoGrave(g,REASON_EFFECT+REASON_REDIRECT)
 	end
 end
 
@@ -153,8 +157,4 @@ end
 
 function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.NegateEffect(ev)
-end
-
-function s.rmtarget(e,c)
-	return c:GetDestination()==LOCATION_REMOVED
 end
