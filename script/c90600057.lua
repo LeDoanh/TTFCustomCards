@@ -17,14 +17,14 @@ end
 s.listed_series={SET_SKY_STRIKER}
 
 --------------------------------------------------------------------------------
--- ĐIỀU KIỆN KÍCH HOẠT: Không điều khiển quái thú ở Main Monster Zone
+-- ĐIỀU KIỆN KÍCH HOẠT: Sân mình không có quái thú nào ở Main Monster Zone
 --------------------------------------------------------------------------------
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0
 end
 
 --------------------------------------------------------------------------------
--- KIỂM TRA QUÁI THÚ BÀI MỤC TIÊU (Level 4 "Sky Striker" monster)
+-- KIỂM TRA QUÁI THÚ MỤC TIÊU (Level 4 "Sky Striker" monster từ Deck hoặc GY)
 --------------------------------------------------------------------------------
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsLevel(4)
@@ -40,10 +40,11 @@ end
 --------------------------------------------------------------------------------
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
+		-- Kiểm tra xem sân đối thủ có còn trống ít nhất 2 ô Main Monster Zone không
 		local ft=Duel.GetLocationCount(1-tp,LOCATION_MZONE)
-		if ft<2 or Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then return false end
-		local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,e,tp)
-		return g:GetClassCount(Card.GetCode)>=2 or (not Duel.IsPlayerAffectedByEffect(tp,59619187) and #g>=2)
+		if ft<2 then return false end
+		-- Cho phép lấy quái từ Deck hoặc GY
+		return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,2,nil,e,tp)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_DECK+LOCATION_GRAVE)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
@@ -52,49 +53,49 @@ end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local ft=Duel.GetLocationCount(1-tp,LOCATION_MZONE)
-	if ft>=2 and not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then
-		local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,e,tp)
-		if #g>=2 then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-			local sg=g:Select(tp,2,2,nil)
-			if #sg==2 then
-				for tc in aux.Next(sg) do
-					if Duel.SpecialSummonStep(tc,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE) then
-						-- Vô hiệu hóa hiệu ứng
-						local e1=Effect.CreateEffect(c)
-						e1:SetType(EFFECT_TYPE_SINGLE)
-						e1:SetCode(EFFECT_DISABLE)
-						e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-						tc:RegisterEffect(e1)
-						local e2=e1:Clone()
-						e2:SetCode(EFFECT_DISABLE_EFFECT)
-						tc:RegisterEffect(e2)
+	if ft<2 then return end
+	
+	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,e,tp)
+	if #g>=2 then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+		local sg=g:Select(tp,2,2,nil)
+		if #sg==2 then
+			for tc in aux.Next(sg) do
+				if Duel.SpecialSummonStep(tc,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE) then
+					-- Vô hiệu hóa hiệu ứng của quái được gọi
+					local e1=Effect.CreateEffect(c)
+					e1:SetType(EFFECT_TYPE_SINGLE)
+					e1:SetCode(EFFECT_DISABLE)
+					e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+					tc:RegisterEffect(e1)
+					local e2=e1:Clone()
+					e2:SetCode(EFFECT_DISABLE_EFFECT)
+					tc:RegisterEffect(e2)
 
-						-- Không thể dùng làm nguyên liệu Fusion, Synchro, Xyz, Link
-						local e3=Effect.CreateEffect(c)
-						e3:SetType(EFFECT_TYPE_SINGLE)
-						e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-						e3:SetCode(EFFECT_CANNOT_BE_FUSION_MATERIAL)
-						e3:SetValue(1)
-						e3:SetReset(RESET_EVENT+RESETS_STANDARD)
-						tc:RegisterEffect(e3)
-						local e4=e3:Clone()
-						e4:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
-						tc:RegisterEffect(e4)
-						local e5=e3:Clone()
-						e5:SetCode(EFFECT_CANNOT_BE_XYZ_MATERIAL)
-						tc:RegisterEffect(e5)
-						local e6=e3:Clone()
-						e6:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
-						tc:RegisterEffect(e6)
-					end
+					-- Không thể dùng làm nguyên liệu Fusion, Synchro, Xyz, Link
+					local e3=Effect.CreateEffect(c)
+					e3:SetType(EFFECT_TYPE_SINGLE)
+					e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+					e3:SetCode(EFFECT_CANNOT_BE_FUSION_MATERIAL)
+					e3:SetValue(1)
+					e3:SetReset(RESET_EVENT+RESETS_STANDARD)
+					tc:RegisterEffect(e3)
+					local e4=e3:Clone()
+					e4:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
+					tc:RegisterEffect(e4)
+					local e5=e3:Clone()
+					e5:SetCode(EFFECT_CANNOT_BE_XYZ_MATERIAL)
+					tc:RegisterEffect(e5)
+					local e6=e3:Clone()
+					e6:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
+					tc:RegisterEffect(e6)
 				end
-				Duel.SpecialSummonComplete()
 			end
+			Duel.SpecialSummonComplete()
 		end
 	end
 
-	-- Khóa Special Summon ngoại trừ "Sky Striker" cho đến hết lượt
+	-- Khóa Special Summon ngoại trừ quái thú "Sky Striker" cho đến hết lượt
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD)
