@@ -112,7 +112,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e4:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
 		c:RegisterEffect(e4,true)
 
-		-- Mới mỗi khi người điều khiển Normal/Special Summon quái thú từ tay hoặc Mộ -> Trừ 500 LP
+		-- Mỗi khi người điều khiển Normal/Special Summon quái thú từ tay hoặc Mộ -> Trừ 500 LP
 		local e5=Effect.CreateEffect(c)
 		e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e5:SetCode(EVENT_SUMMON_SUCCESS)
@@ -134,6 +134,6 @@ function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetHandler():GetControler()
 	if eg:IsExists(s.damfilter,1,nil,p) then
 		Duel.Hint(HINT_CARD,0,id)
-		Duel.LoseLP(p,500)
+		Duel.SetLP(p, Duel.GetLP(p) - 500)
 	end
 end
