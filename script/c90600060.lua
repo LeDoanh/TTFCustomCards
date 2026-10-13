@@ -2,27 +2,19 @@
 -- ID: 90600060
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Triệu hồi Đặc biệt bằng cách Tribute 2 quái thú đối thủ điều khiển (Kaiju-style)
+	-- Triệu hồi Đặc biệt bằng cách Tribute 2 quái thú đối thủ điều khiển (Kaiju-style) sang sân đối thủ ở thế Phòng thủ
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_SPSUMMON_PROC)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_SPSUMMON_PARAM)
+	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
 	e1:SetRange(LOCATION_HAND)
-	e1:SetTargetRange(POS_FACEUP_DEFENSE,1) -- Triệu hồi sang sân đối thủ ở thế Phòng thủ
 	e1:SetCondition(s.spcon)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Không thể Normal Summon/Set trong lượt Triệu hồi Đặc biệt theo cách trên
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetCode(EFFECT_CANNOT_DISABLE)
-	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	c:RegisterEffect(e2)
-
-	-- Không thể thay đổi tư thế chiến đấu (Its battle position cannot be changed)
+	-- Không thể thay đổi tư thế chiến đấu
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE)
 	e3:SetCode(EFFECT_CANNOT_CHANGE_POSITION)
@@ -89,6 +81,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	if not g then return end
 	Duel.Release(g,REASON_COST)
 	g:DeleteGroup()
+
+	-- Thiết lập triệu hồi sang sân đối thủ (1-tp) ở thế Phòng thủ ngửa mặt
+	c:SetSpecialSummonInfo(SUMMON_TYPE_SPECIAL,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE)
 
 	-- Ràng buộc không thể Normal Summon/Set trong lượt này
 	local e1=Effect.CreateEffect(c)
