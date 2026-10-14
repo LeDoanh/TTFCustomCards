@@ -19,9 +19,9 @@ function s.initial_effect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_BATTLED)
+	e2:SetCode(EVENT_BATTLE_CONFIRMED)
 	e2:SetRange(LOCATION_GRAVE)
-	e2:SetCountLimit(1,id+100)
+	e2:SetCountLimit(1,{id,1})
 	e2:SetCost(aux.bfgcost)
 	e2:SetCondition(s.descon)
 	e2:SetTarget(s.destg)
@@ -34,12 +34,9 @@ s.listed_series={SET_SKY_STRIKER}
 --------------------------------------------------------------------------------
 -- HIỆU ỨNG 1
 --------------------------------------------------------------------------------
-function s.cfilter(c)
-	return c:GetSequence()<5
-end
-
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	return not Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
+	return Duel.GetMatchingGroupCount(Card.IsMonster,tp,LOCATION_MZONE,0,nil)==0
+		or not Duel.IsExistingMatchingCard(Card.IsLocation,tp,LOCATION_MZONE,0,1,nil,LOCATION_MZONE)
 end
 
 function s.filter(c,e,tp)
@@ -54,15 +51,26 @@ end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
 	if #g>0 then
 		local tc=g:GetFirst()
 		local b1=tc:IsAbleToHand()
 		local b2=Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
 			and tc:IsCanBeSpecialSummoned(e,0,tp,true,false) 
-			and Duel.GetMatchingGroupCount(Card.IsType,tp,LOCATION_GRAVE,0,nil,TYPE_SPELL)>=3
+			and Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3
 			
-		if b1 and (not b2 or Duel.SelectOption(tp,1190,1152)==0) then
+		local op=0
+		if b1 and b2 then
+			op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
+		elseif b1 then
+			op=0
+		elseif b2 then
+			op=1
+		else
+			return
+		end
+		
+		if op==0 then
 			Duel.SendtoHand(tc,nil,REASON_EFFECT)
 			Duel.ConfirmCards(1-tp,tc)
 		else
@@ -77,11 +85,8 @@ end
 -- HIỆU ỨNG 2
 --------------------------------------------------------------------------------
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-	local a=Duel.GetAttacker()
-	local d=Duel.GetAttackTarget()
-	if not a then return false end
-	if a:IsControler(1-tp) then a,d=d,a end
-	return a and a:IsControler(tp) and a:IsFaceup() and a:IsSetCard(SET_SKY_STRIKER) and d and d:IsControler(1-tp)
+	local tc=Duel.GetBattleMonster(tp)
+	return tc and tc:IsFaceup() and tc:IsSetCard(SET_SKY_STRIKER)
 end
 
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
