@@ -68,9 +68,9 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.tgfilter,tp,LOCATION_DECK,0,nil)
 	if g:GetClassCount(Card.GetCode)<2 then return end
 	
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local sg=g:SelectUnselect(Group.CreateGroup(),tp,false,false,2,2)
-	if #sg==2 and sg:GetFirst():GetCode()~=sg:GetNext():GetCode() then
+	-- Sử dụng aux.SelectUnselectGroup để đảm bảo chọn đúng 2 lá khác tên chuẩn YGOPro
+	local sg=aux.SelectUnselectGroup(g,e,tp,2,2,aux.dncheck,1,tp,HINTMSG_TOGRAVE)
+	if sg and #sg==2 then
 		if Duel.SendtoGrave(sg,REASON_EFFECT)>0 and sg:FilterCount(Card.IsLocation,nil,LOCATION_GRAVE)==2 then
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 			local mg=Duel.SelectMatchingCard(tp,s.monfilter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
