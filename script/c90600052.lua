@@ -14,10 +14,10 @@ function s.initial_effect(c)
 	e1:SetValue(aux.lnklimit)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 1 (Quick Effect): Chỉ định 1 "Sky Striker" Spell trong GY -> Banish nó và nhận hiệu ứng của lá đó cho đến cuối lượt
+	-- Hiệu ứng 1 (Quick Effect): Chọn 1 "Sky Striker" Spell từ GY (Banish & Copy) HOẶC Chọn 1 "Sky Striker" từ Deck (Thêm lên tay hoặc Gửi xuống GY)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_REMOVE)
+	e2:SetCategory(CATEGORY_REMOVE+CATEGORY_TOHAND+CATEGORY_TOGRAVE)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
@@ -43,26 +43,86 @@ end
 s.listed_series={SET_SKY_STRIKER,SET_SKY_STRIKER_ACE}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: COPY HIỆU ỨNG CỦA SKY STRIKER SPELL TRONG MỘ
+-- HIỆU ỨNG 1: CHỌN 1 TRONG 2 LỰA CHỌN (COPY SPELL TỪ GY HOẶC SEARCH/MILL TỪ DECK)
 --------------------------------------------------------------------------------
 function s.cpfilter(c)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToRemove()
 end
 
+function s.thtgfilter(c)
+	return c:IsSetCard(SET_SKY_STRIKER) and (c:IsAbleToHand() or c:IsAbleToGrave())
+end
+
 function s.cptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.cpfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.cpfilter,tp,LOCATION_GRAVE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectTarget(tp,s.cpfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
+	if chk==0 then 
+		return Duel.IsExistingTarget(s.cpfilter,tp,LOCATION_GRAVE,0,1,nil) 
+			or Duel.IsExistingMatchingCard(s.thtgfilter,tp,LOCATION_DECK,0,1,nil) 
+	end
+	
+	-- Cho phép người chơi chọn hình thức kích hoạt (Target từ GY hoặc chọn từ Deck)
+	-- Ở đây ta ưu tiên cho phép chọn target từ GY nếu có, hoặc linh hoạt
+	local b1=Duel.IsExistingTarget(s.cpfilter,tp,LOCATION_GRAVE,0,1,nil)
+	local b2=Duel.IsExistingMatchingCard(s.thtgfilter,tp,LOCATION_DECK,0,1,nil)
+	
+	local op=0
+	if b1 and b2 then
+		op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0: Copy Spell từ GY, 1: Thêm/Gửi từ Deck
+	elseif b1 then
+		op=0
+	else
+		op=1
+	end
+	
+	e:SetLabel(op)
+	
+	if op==0 then
+		e:SetProperty(EFFECT_FLAG_CARD_TARGET)
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+		local g=Duel.SelectTarget(tp,s.cpfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+		Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
+	else
+		e:SetProperty(0)
+		Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
+		Duel.SetPossibleOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
+	end
 end
 
 function s.cpop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 and c:IsRelateToEffect(e) and c:IsFaceup() then
-		-- Sao chép tên và hiệu ứng của lá Spell bị Banish cho đến cuối lượt
-		c:CopyEffect(tc:GetCode(),RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,1)
+	local op=e:GetLabel()
+	
+	if op==0 then
+		local tc=Duel.GetFirstTarget()
+		if tc and tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 and c:IsRelateToEffect(e) and c:IsFaceup() then
+			-- Sao chép tên và hiệu ứng của lá Spell bị Banish cho đến cuối lượt
+			c:CopyEffect(tc:GetCode(),RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,1)
+		end
+	else
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SELECT)
+		local g=Duel.SelectMatchingCard(tp,s.thtgfilter,tp,LOCATION_DECK,0,1,1,nil)
+		if #g>0 then
+			local tc=g:GetFirst()
+			local b1=tc:IsAbleToHand()
+			local b2=tc:IsAbleToGrave()
+			local sub_op=0
+			if b1 and b2 then
+				sub_op=Duel.SelectOption(tp,aux.Stringid(id,4),aux.Stringid(id,5)) -- 0: Thêm lên tay, 1: Gửi xuống Mộ
+			elseif b1 then
+				sub_op=0
+			elseif b2 then
+				sub_op=1
+			else
+				return
+			end
+			
+			if sub_op==0 then
+				Duel.SendtoHand(tc,nil,REASON_EFFECT)
+				Duel.ConfirmCards(1-tp,tc)
+			else
+				Duel.SendtoGrave(tc,REASON_EFFECT)
+			end
+		end
 	end
 end
 

@@ -19,8 +19,9 @@ function s.initial_effect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_BATTLE_CONFIRMED)
+	e2:SetCode(EVENT_BATTLED)
 	e2:SetRange(LOCATION_GRAVE)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCost(aux.bfgcost)
 	e2:SetCondition(s.descon)
@@ -32,15 +33,16 @@ end
 s.listed_series={SET_SKY_STRIKER}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1
+-- HIỆU ỨNG 1: SEARCH / SPECIAL SUMMON TỪ DECK
 --------------------------------------------------------------------------------
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetMatchingGroupCount(Card.IsMonster,tp,LOCATION_MZONE,0,nil)==0
-		or not Duel.IsExistingMatchingCard(Card.IsLocation,tp,LOCATION_MZONE,0,1,nil,LOCATION_MZONE)
+	return Duel.GetFieldGroupCount(tp,LOCATION_MMZONE,0)==0
+		or Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and (c:IsCode(90600061) or c:IsCode(90600003) or c:IsCode(90600024)) end,tp,LOCATION_FZONE+LOCATION_MZONE,0,1,nil)
 end
 
 function s.filter(c,e,tp)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsMonster() and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
+	return c:IsSetCard(SET_SKY_STRIKER) and c:IsMonster() 
+		and (c:IsAbleToHand() or (Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -51,12 +53,12 @@ end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 then
-		local tc=g:GetFirst()
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
+	local tc=g:GetFirst()
+	if tc then
 		local b1=tc:IsAbleToHand()
 		local b2=Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
-			and tc:IsCanBeSpecialSummoned(e,0,tp,true,false) 
+			and tc:IsCanBeSpecialSummoned(e,0,tp,false,false) 
 			and Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3
 			
 		local op=0
@@ -74,19 +76,20 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			Duel.SendtoHand(tc,nil,REASON_EFFECT)
 			Duel.ConfirmCards(1-tp,tc)
 		else
-			if Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)~=0 then
-				tc:CompleteProcedure()
-			end
+			Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
 		end
 	end
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 2
+-- HIỆU ỨNG 2: BFG KHI BATTLED ĐỂ DESTROY CARD
 --------------------------------------------------------------------------------
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetBattleMonster(tp)
-	return tc and tc:IsFaceup() and tc:IsSetCard(SET_SKY_STRIKER)
+	local a=Duel.GetAttacker()
+	local d=Duel.GetAttackTarget()
+	if not a then return false end
+	return (a:IsControler(tp) and a:IsSetCard(SET_SKY_STRIKER))
+		or (d and d:IsControler(tp) and d:IsSetCard(SET_SKY_STRIKER))
 end
 
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)

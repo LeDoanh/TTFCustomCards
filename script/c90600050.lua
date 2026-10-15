@@ -2,116 +2,104 @@
 -- ID: 90600050
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Nguyên liệu Link: 4+ quái thú "Sky Striker"
+	-- Nguyên liệu Link: 3+ "Sky Striker" Monsters
 	c:EnableReviveLimit()
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,SET_SKY_STRIKER),4)
+	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,SET_SKY_STRIKER),3)
 
-	-- Bắt buộc phải Link Summon trước tiên
+	-- Must first be Link Summoned
+	local e0=Effect.CreateEffect(c)
+	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
+	e0:SetValue(s.splimit)
+	c:RegisterEffect(e0)
+
+	-- Hiệu ứng 1: Quick Effect - Banish 3 Spells -> Negate toàn bộ bài ngửa mặt của đối thủ & Banish tối đa 3 lá ở GY/sân đối thủ
 	local e1=Effect.CreateEffect(c)
-	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e1:SetValue(aux.lnklimit)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_DISABLE+CATEGORY_REMOVE)
+	e1:SetType(EFFECT_TYPE_QUICK_O)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetCountLimit(1,id)
+	e1:SetCost(s.negcost)
+	e1:SetTarget(s.negtg)
+	e1:SetOperation(s.negop)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 1: Không bị ảnh hưởng bởi hiệu ứng card khác khi bạn không điều khiển quái thú nào ở Main Monster Zone
+	-- Hiệu ứng 2: Nếu bị gửi xuống GY -> Special Summon tối đa 2 quái Level 4 "Sky Striker Ace" khác tên từ GY/Banish, rồi rút bài theo số Spell trong GY (max 3)
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetCode(EFFECT_IMMUNE_EFFECT)
-	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCondition(s.immcon)
-	e2:SetValue(s.efilter)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW+CATEGORY_LEAVE_GRAVE)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_TO_GRAVE)
+	e2:SetCountLimit(1,{id,1})
+	e2:SetTarget(s.sptg)
+	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
-
-	-- Hiệu ứng 2: Banish 3 Sky Striker Spell từ GY -> Vô hiệu hóa tất cả lá bài ngửa mặt đối thủ điều khiển, sau đó banish tối đa 3 lá bài từ GY hoặc sân đối thủ
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,0))
-	e3:SetCategory(CATEGORY_DISABLE+CATEGORY_REMOVE)
-	e3:SetType(EFFECT_TYPE_QUICK_O)
-	e3:SetCode(EVENT_FREE_CHAIN)
-	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1,id)
-	e3:SetCost(s.discost)
-	e3:SetTarget(s.distg)
-	e3:SetOperation(s.disop)
-	c:RegisterEffect(e3)
-
-	-- Hiệu ứng 3: Khi bị phá hủy bởi chiến đấu/hiệu ứng -> Summon tối đa 2 quái "Sky Striker Ace" Cấp 4 khác tên từ GY/Banishment, sau đó rút bài tương ứng số Spell trong GY (tối đa 3)
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW)
-	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e4:SetCode(EVENT_DESTROYED)
-	e4:SetProperty(EFFECT_FLAG_DELAY)
-	e4:SetCountLimit(1,{id,1})
-	e4:SetTarget(s.sptg)
-	e4:SetOperation(s.spop)
-	c:RegisterEffect(e4)
 end
 
 s.listed_series={SET_SKY_STRIKER,SET_SKY_STRIKER_ACE}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: MIỄN NHIỄM HIỆU ỨNG
+-- SUMMON LIMIT
 --------------------------------------------------------------------------------
-function s.immcon(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==1 
-		and e:GetHandler():GetSequence()<5
-end
-
-function s.efilter(e,te)
-	return te:GetOwner()~=e:GetHandler()
+function s.splimit(e,se,sp,st)
+	return (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK or not e:GetHandler():IsLocation(LOCATION_EXTRA)
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 2: VÔ HIỆU HÓA & BANISH CARD ĐỐI THỦ
+-- HIỆU ỨNG 1: NEGATE TOÀN BỘ SÂN ĐỐI THỦ & BANISH UP TO 3
 --------------------------------------------------------------------------------
 function s.cfilter(c)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToRemoveAsCost()
 end
 
-function s.discost(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,3,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,3,3,nil)
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 
-function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,0,LOCATION_ONFIELD,1,nil) end
-	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_ONFIELD,nil)
+function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsNegatable,tp,0,LOCATION_ONFIELD,1,nil) end
+	local g=Duel.GetMatchingGroup(Card.IsNegatable,tp,0,LOCATION_ONFIELD,nil)
 	Duel.SetOperationInfo(0,CATEGORY_DISABLE,g,#g,0,0)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,nil,1,1-tp,LOCATION_ONFIELD+LOCATION_GRAVE)
 end
 
-function s.disop(e,tp,eg,ep,ev,re,r,rp)
+function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_ONFIELD,nil)
-	if #g>0 then
-		for tc in aux.Next(g) do
+	local count=0
+	for tc in aux.Next(g) do
+		if not tc:IsDisabled() then
+			Duel.NegateRelatedChain(tc,RESET_TURN_SET)
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_SINGLE)
 			e1:SetCode(EFFECT_DISABLE)
-			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 			tc:RegisterEffect(e1)
 			local e2=Effect.CreateEffect(c)
 			e2:SetType(EFFECT_TYPE_SINGLE)
 			e2:SetCode(EFFECT_DISABLE_EFFECT)
-			e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+			e2:SetValue(RESET_TURN_SET)
+			e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 			tc:RegisterEffect(e2)
+			count=count+1
 		end
-		
-		-- Banish tối đa 3 lá bài từ GY hoặc sân đối thủ
-		local rg=Duel.GetMatchingGroup(Card.IsAbleToRemove,tp,0,LOCATION_ONFIELD+LOCATION_GRAVE,nil)
-		if #rg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+	end
+	
+	if count>0 then
+		local rm_g=Duel.GetMatchingGroup(Card.IsAbleToRemove,tp,0,LOCATION_ONFIELD+LOCATION_GRAVE,nil)
+		if #rm_g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 			Duel.BreakEffect()
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-			local sg=rg:Select(tp,1,3,nil)
+			local sg=rm_g:Select(tp,1,3,nil)
 			if #sg>0 then
-				Duel.HintSelection(sg)
 				Duel.Remove(sg,POS_FACEUP,REASON_EFFECT)
 			end
 		end
@@ -119,7 +107,7 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 3: SPECIAL SUMMON VÀ DRAW CARD KHI BỊ PHÁ HỦY
+-- HIỆU ỨNG 2: SPECIAL SUMMON UP TO 2 & DRAW CARDS
 --------------------------------------------------------------------------------
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(SET_SKY_STRIKER_ACE) and c:IsLevel(4)
@@ -129,29 +117,25 @@ end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
+		and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
 	if ft<=0 then return end
 	if ft>2 then ft=2 end
+	
 	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_GRAVE+LOCATION_REMOVED,0,nil,e,tp)
-	if #g>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local sg=g:SelectUnselect(Group.CreateGroup(),tp,false,false,1,ft)
-		if #sg>0 then
-			local ct=Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
-			if ct>0 then
-				local spell_ct=Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)
-				if spell_ct>3 then spell_ct=3 end
-				if spell_ct>0 and Duel.IsPlayerCanDraw(tp,spell_ct) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-					Duel.BreakEffect()
-					Duel.Draw(tp,spell_ct,REASON_EFFECT)
-				end
-			end
+	if #g==0 then return end
+	
+	local sg=aux.SelectUnselectGroup(g,e,tp,1,ft,aux.dncheck,1,tp,HINTMSG_SPSUMMON)
+	if sg and #sg>0 and Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)>0 then
+		local spell_ct=Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)
+		if spell_ct>3 then spell_ct=3 end
+		if spell_ct>0 and Duel.IsPlayerCanDraw(tp,spell_ct) then
+			Duel.BreakEffect()
+			Duel.Draw(tp,spell_ct,REASON_EFFECT)
 		end
 	end
 end

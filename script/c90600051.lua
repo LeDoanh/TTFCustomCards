@@ -32,7 +32,7 @@ function s.initial_effect(c)
 	-- Hiệu ứng 2: Khi đối thủ kích hoạt card/effect (Quick Effect): Trộn 1 "Sky Striker" Spell từ GY vào Deck -> Vô hiệu hóa hiệu ứng đó, sau đó có thể Úp 1 "Sky Striker" Spell từ Deck/GY
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,0))
-	e4:SetCategory(CATEGORY_DISABLE+CATEGORY_TODECK)
+	e4:SetCategory(CATEGORY_DISABLE+CATEGORY_TODECK+CATEGORY_LEAVE_GRAVE)
 	e4:SetType(EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_CHAINING)
 	e4:SetRange(LOCATION_MZONE)
@@ -61,7 +61,7 @@ function s.discon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.tdfilter(c)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToDeckAsCost()
+	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToDeck()
 end
 
 function s.discost(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -78,6 +78,7 @@ end
 function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
 	Duel.SetOperationInfo(0,CATEGORY_DISABLE,eg,1,0,0)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_LEAVE_GRAVE,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.disop(e,tp,eg,ep,ev,re,r,rp)

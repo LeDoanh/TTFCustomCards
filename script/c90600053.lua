@@ -46,7 +46,7 @@ end
 s.listed_series={SET_SKY_STRIKER,SET_SKY_STRIKER_ACE}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: ÉP ĐỐI THỦ GỬI QUÁI THÚ CÓ ATK CAO NHẤT XUỐNG GY
+-- HIỆU ỨNG 1: ÉP ĐỐI THỦ GỬI QUÁI THÚ CÓ ATK CAO NHẤT XU XUỐNG GY
 --------------------------------------------------------------------------------
 function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsMainPhase()
@@ -96,8 +96,7 @@ end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
-	if chk==0 then return c:IsDestructible() 
-		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil,e,tp,c) end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil,e,tp,c) end
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,c,1,0,0)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA+LOCATION_GRAVE)
 end
@@ -120,7 +119,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
 	e1:SetTargetRange(1,0)
 	e1:SetTarget(s.splimit)
-	e1:SetReset(RESET_PHASE+PHASE_END)
+	e3:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e1,tp)
 end
 

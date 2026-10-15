@@ -19,10 +19,10 @@ end
 s.listed_series={SET_SKY_STRIKER}
 
 --------------------------------------------------------------------------------
--- ĐIỀU KIỆN KÍCH HOẠT: Sân không có quái ở MMZ (hoặc có hiệu ứng Bypass)
+-- ĐIỀU KIỆN KÍCH HOẠT: Sân không có quái ở MMZ (hoặc có hiệu ứng Bypass từ 90600003)
 --------------------------------------------------------------------------------
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0 
+	return Duel.GetFieldGroupCount(tp,LOCATION_MMZONE,0)==0 
 		or Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and (c:IsCode(90600059) or c:IsCode(90600003) or c:IsCode(90600024)) end,tp,LOCATION_MZONE,0,1,nil)
 end
 

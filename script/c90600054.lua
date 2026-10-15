@@ -27,12 +27,12 @@ function s.initial_effect(c)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 
-	-- Hiệu ứng 2: Trong Main Phase của đối thủ (Quick Effect) -> Banish 2 "Sky Striker" Spell từ GY; bỏ qua Battle Phase của đối thủ lượt này
+	-- Hiệu ứng 2: Trong Main Phase hoặc đầu Battle Phase của đối thủ (Quick Effect) -> Banish 2 "Sky Striker" Spell từ GY; bỏ qua Battle Phase của đối thủ
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
-	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END+TIMING_BATTLE_START)
 	e3:SetRange(LOCATION_MZONE)
 	e3:SetCountLimit(1,{id,1})
 	e3:SetCondition(s.skipcon)
@@ -90,7 +90,7 @@ end
 -- HIỆU ỨNG 2: BỎ QUA BATTLE PHASE CỦA ĐỐI THỦ
 --------------------------------------------------------------------------------
 function s.skipcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==1-tp and Duel.IsMainPhase()
+	return Duel.GetTurnPlayer()==1-tp and (Duel.IsMainPhase() or Duel.IsBattlePhase())
 end
 
 function s.cfilter(c)

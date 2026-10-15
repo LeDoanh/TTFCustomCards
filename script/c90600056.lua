@@ -19,6 +19,7 @@ function s.initial_effect(c)
 	-- Hiệu ứng 2: Gửi 1 card từ tay/sân xuống GY -> Úp 1 card "Sky Striker" từ Deck/GY (có thể kích hoạt trong lượt), đồng thời khóa Extra Deck ngoại trừ quái "Sky Striker"
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetCategory(CATEGORY_LEAVE_GRAVE)
 	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_SZONE)
 	e3:SetCountLimit(1,id)
@@ -30,7 +31,7 @@ function s.initial_effect(c)
 	-- Hiệu ứng 3: Trong Main Phase - Chọn bất kỳ số lượng "Sky Striker" Spell khác tên trong GY -> Lấy lên tay hoặc Úp lên sân
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetCategory(CATEGORY_TOHAND)
+	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_LEAVE_GRAVE)
 	e4:SetType(EFFECT_TYPE_IGNITION)
 	e4:SetRange(LOCATION_SZONE)
 	e4:SetCountLimit(1,{id,1})
@@ -71,7 +72,8 @@ end
 
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
-		and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
+		and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.setfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
+	Duel.SetPossibleOperationInfo(0,CATEGORY_LEAVE_GRAVE,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
@@ -111,22 +113,23 @@ end
 --------------------------------------------------------------------------------
 -- HIỆU ỨNG 3: LẤY HOẶC ÚP NHIỀU SPELL "SKY STRIKER" KHÁC TÊN TỪ GY
 --------------------------------------------------------------------------------
-function s.gyfilter(c)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and (c:IsAbleToHand() or c:IsSSetable())
+function s.gyfilter(c,tp)
+	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and (c:IsAbleToHand() or (c:IsSSetable() and Duel.GetLocationCount(tp,LOCATION_SZONE)>0))
 end
 
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.gyfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	if chk==0 then return Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.gyfilter),tp,LOCATION_GRAVE,0,1,nil,tp) end
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_LEAVE_GRAVE,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.gyfilter),tp,LOCATION_GRAVE,0,nil)
+	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.gyfilter),tp,LOCATION_GRAVE,0,nil,tp)
 	if #g==0 then return end
 	
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SELECT)
-	local sg=g:SelectUnselect(Group.CreateGroup(),tp,false,false,1,#g)
-	if #sg>0 and sg:GetClassCount(Card.GetCode)==#sg then
+	-- Sử dụng aux.SelectUnselectGroup với aux.dncheck để lọc bài khác tên an toàn chuẩn EDOPro
+	local sg=aux.SelectUnselectGroup(g,e,tp,1,#g,aux.dncheck,1,tp,HINTMSG_SELECT)
+	if sg and #sg>0 then
 		for tc in aux.Next(sg) do
 			local b1=tc:IsAbleToHand()
 			local b2=tc:IsSSetable() and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
@@ -137,6 +140,8 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 				op=0
 			elseif b2 then
 				op=1
+			else
+				goto continue
 			end
 			
 			if op==0 then
@@ -145,6 +150,7 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 			else
 				Duel.SSet(tp,tc)
 			end
+			::continue::
 		end
 	end
 end

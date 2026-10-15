@@ -11,7 +11,7 @@ function s.initial_effect(c)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(aux.linklimit)
+	e0:SetValue(s.splimit)
 	c:RegisterEffect(e0)
 
 	-- Hiệu ứng 1: Nếu lá này được Link Summoned: Gửi 1 lá "Sky Striker" từ Deck xuống GY
@@ -44,8 +44,12 @@ end
 s.listed_series={SET_SKY_STRIKER}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: GỬI CARD TỪ DECK XUỐNG GY
+-- ĐIỀU KIỆN KÍCH HOẠT VÀ TRIỆU HỒI
 --------------------------------------------------------------------------------
+function s.splimit(e,se,sp,st)
+	return (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK or not e:GetHandler():IsLocation(LOCATION_EXTRA)
+end
+
 function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
