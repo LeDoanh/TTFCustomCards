@@ -46,7 +46,7 @@ end
 s.listed_series={SET_SKY_STRIKER,SET_SKY_STRIKER_ACE}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: ÉP ĐỐI THỦ GỬI QUÁI THÚ CÓ ATK CAO NHẤT XU XUỐNG GY
+-- HIỆU ỨNG 1: ÉP ĐỐI THỦ GỬI QUÁI THÚ CÓ ATK CAO NHẤT XUỐNG GY
 --------------------------------------------------------------------------------
 function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsMainPhase()
@@ -85,7 +85,8 @@ end
 -- HIỆU ỨNG 2: TỰ PHÁ HỦY & SPECIAL SUMMON QUÁI THÚ SKY STRIKER ACE
 --------------------------------------------------------------------------------
 function s.spfilter(c,e,tp,sc)
-	if not (c:IsSetCard(SET_SKY_STRIKER_ACE) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)) then return false end
+	-- Bổ sung true (bỏ qua điều kiện triệu hồi) để cho phép triệu hồi quái Link từ Extra Deck
+	if not (c:IsSetCard(SET_SKY_STRIKER_ACE) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)) then return false end
 	if c:IsType(TYPE_LINK) and c:GetLink()>=3 then return false end
 	if c:IsLocation(LOCATION_EXTRA) then
 		return Duel.GetLocationCountFromEx(tp,tp,sc,c)>0
@@ -107,7 +108,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.spfilter),tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil,e,tp,nil)
 		if #g>0 then
-			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+			Duel.SpecialSummon(g,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 
@@ -119,7 +120,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
 	e1:SetTargetRange(1,0)
 	e1:SetTarget(s.splimit)
-	e3:SetReset(RESET_PHASE+PHASE_END)
+	e1:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e1,tp)
 end
 
