@@ -18,11 +18,13 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 2: Tribute lá bài này -> Special Summon 1 quái "Sky Striker Ace" từ GY hoặc bị Banish (trừ "Omega Zero")
+	-- Hiệu ứng 2 (Quick Effect): Tribute lá bài này -> Special Summon 1 quái "Sky Striker Ace" từ GY hoặc bị Banish (trừ "Omega Zero")
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_LEAVE_GRAVE)
-	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetType(EFFECT_TYPE_QUICK_O)
+	e2:SetCode(EVENT_FREE_CHAIN)
+	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCost(s.spcost)
@@ -74,7 +76,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 2: TRIBUTE VÀ SPECIAL SUMMON SKY STRIKER ACE TỪ GY / BANISHMENT
+-- HIỆU ỨNG 2: QUICK EFFECT - TRIBUTE VÀ SPECIAL SUMMON SKY STRIKER ACE TỪ GY / BANISHMENT
 --------------------------------------------------------------------------------
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
