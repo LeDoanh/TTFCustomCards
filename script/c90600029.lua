@@ -2,19 +2,20 @@
 -- ID: 90600029
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Hiệu ứng 1: Thêm 1 quái thú "Sky Striker" từ Deck lên tay, nếu có >=3 Phép trong Mộ thì có thể Special Summon
+	-- Hiệu ứng 1: Search 1 quái "Sky Striker" từ Deck lên tay, nếu có >=3 Spell trong GY thì có thể Special Summon (bỏ qua đk triệu hồi)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
 	e1:SetCondition(s.condition)
 	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 2: Loại bỏ từ Mộ khi quái thú "Sky Striker" chiến đấu để phá hủy 1 lá bài của đối thủ
+	-- Hiệu ứng 2: Banish từ GY khi quái "Sky Striker" chiến đấu với quái đối thủ -> Target 1 card đối thủ; phá hủy
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
@@ -22,7 +23,6 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_BATTLED)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e2:SetCountLimit(1,{id,1})
 	e2:SetCost(aux.bfgcost)
 	e2:SetCondition(s.descon)
 	e2:SetTarget(s.destg)
@@ -33,63 +33,49 @@ end
 s.listed_series={SET_SKY_STRIKER}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: SEARCH / SPECIAL SUMMON TỪ DECK
+-- HIỆU ỨNG 1: SEARCH & SPECIAL SUMMON (IGNORING SUMMONING CONDITIONS)
 --------------------------------------------------------------------------------
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MMZONE,0)==0
 		or Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and (c:IsCode(90600061) or c:IsCode(90600003) or c:IsCode(90600024)) end,tp,LOCATION_FZONE+LOCATION_MZONE,0,1,nil)
 end
 
-function s.filter(c,e,tp)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsMonster() 
-		and (c:IsAbleToHand() or (Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
+function s.filter(c)
+	return c:IsSetCard(SET_SKY_STRIKER) and c:IsMonster() and c:IsAbleToHand()
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil,e,tp) end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
-	local tc=g:GetFirst()
-	if tc then
-		local b1=tc:IsAbleToHand()
-		local b2=Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
-			and tc:IsCanBeSpecialSummoned(e,0,tp,false,false) 
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
+	if #g>0 and Duel.SendtoHand(g,nil,REASON_EFFECT)>0 then
+		Duel.ConfirmCards(1-tp,g)
+		local tc=g:GetFirst()
+		if tc:IsLocation(LOCATION_HAND) 
 			and Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3
-			
-		local op=0
-		if b1 and b2 then
-			op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
-		elseif b1 then
-			op=0
-		elseif b2 then
-			op=1
-		else
-			return
-		end
-		
-		if op==0 then
-			Duel.SendtoHand(tc,nil,REASON_EFFECT)
-			Duel.ConfirmCards(1-tp,tc)
-		else
-			Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+			and tc:IsCanBeSpecialSummoned(e,0,tp,true,false)
+			and Duel.GetMZoneCount(tp)>0
+			and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+			Duel.BreakEffect()
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 2: BFG KHI BATTLED ĐỂ DESTROY CARD
+-- HIỆU ỨNG 2: BANISH TỪ GY KHI BATTLED ĐỂ PHÁ HỦY CARD ĐỐI THỦ
 --------------------------------------------------------------------------------
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
 	if not a then return false end
-	return (a:IsControler(tp) and a:IsSetCard(SET_SKY_STRIKER))
-		or (d and d:IsControler(tp) and d:IsSetCard(SET_SKY_STRIKER))
+	return (a:IsControler(tp) and a:IsSetCard(SET_SKY_STRIKER) and d and d:IsControler(1-tp))
+		or (d and d:IsControler(tp) and d:IsSetCard(SET_SKY_STRIKER) and a:IsControler(1-tp))
 end
 
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
