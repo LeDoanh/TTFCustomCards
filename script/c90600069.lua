@@ -2,13 +2,12 @@
 -- ID: 90600069
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Hiệu ứng 1: Gửi 1 lá "Sky Striker" từ trên tay hoặc Deck xuống GY -> Target 1 lá "Sky Striker" trong GY; lấy lên tay
+	-- Hiệu ứng 1: Gửi 1 lá "Sky Striker" từ trên tay hoặc Deck xuống GY -> Có thể lấy 1 lá "Sky Striker" từ GY lên tay
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_TOGRAVE+CATEGORY_TOHAND)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
 	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
@@ -46,31 +45,30 @@ function s.thfilter(c)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsAbleToHand()
 end
 
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter(chkc) end
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
+		-- Chỉ cần có bài trên tay hoặc Deck để gửi xuống Mộ là đủ điều kiện kích hoạt
 		return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil,e)
-			and Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,1,nil)
 	end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil,e)
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,1,0,0)
-	
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local tg=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,tg,1,0,0)
-	-- Lưu lại lá bài được chọn gửi xuống GY vào hiệu ứng để dùng ở Operation
-	e:SetLabelObject(g:GetFirst())
+	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_HAND+LOCATION_DECK)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	local tc=e:GetLabelObject()
-	if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_GRAVE) then
-		local sc=Duel.GetFirstTarget()
-		if sc and sc:IsRelateToEffect(e) then
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil,e)
+	if #g>0 and Duel.SendtoGrave(g,REASON_EFFECT)>0 and g:GetFirst():IsLocation(LOCATION_GRAVE) then
+		-- Sau khi gửi thành công, nếu trong Mộ có bài hợp lệ thì cho phép chọn lấy lên tay (tùy chọn)
+		local th_g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_GRAVE,0,nil)
+		if #th_g>0 and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE,0,1,nil)
+			and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
 			Duel.BreakEffect()
-			Duel.SendtoHand(sc,nil,REASON_EFFECT)
-			Duel.ConfirmCards(1-tp,sc)
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+			local sg=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+			if #sg>0 then
+				Duel.SendtoHand(sg,nil,REASON_EFFECT)
+				Duel.ConfirmCards(1-tp,sg)
+			end
 		end
 	end
 end
