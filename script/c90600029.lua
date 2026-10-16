@@ -15,12 +15,12 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 2: Banish từ GY khi quái "Sky Striker" chiến đấu với quái đối thủ -> Target 1 card đối thủ; phá hủy
+	-- Hiệu ứng 2: Banish từ GY khi quái "Sky Striker" tuyên bố tấn công hoặc bị tấn công -> Target 1 card của đối thủ; phá hủy
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_BATTLED)
+	e2:SetCode(EVENT_ATTACK_ANNOUNCE)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetCost(aux.bfgcost)
@@ -68,14 +68,13 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 2: BANISH TỪ GY KHI BATTLED ĐỂ PHÁ HỦY CARD ĐỐI THỦ
+-- HIỆU ỨNG 2: BANISH TỪ GY KHI TUYÊN BỐ TẤN CÔNG / BỊ TẤN CÔNG
 --------------------------------------------------------------------------------
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-	local a=Duel.GetAttacker()
-	local d=Duel.GetAttackTarget()
-	if not a then return false end
-	return (a:IsControler(tp) and a:IsSetCard(SET_SKY_STRIKER) and d and d:IsControler(1-tp))
-		or (d and d:IsControler(tp) and d:IsSetCard(SET_SKY_STRIKER) and a:IsControler(1-tp))
+	local ac=Duel.GetAttacker()
+	local tc=Duel.GetAttackTarget()
+	return (ac and ac:IsControler(tp) and ac:IsSetCard(SET_SKY_STRIKER))
+		or (tc and tc:IsControler(tp) and tc:IsSetCard(SET_SKY_STRIKER))
 end
 
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)

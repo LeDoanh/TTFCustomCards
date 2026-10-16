@@ -6,17 +6,16 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,SET_SKY_STRIKER),2,2)
 
-	-- Hiệu ứng 1 (Quick Effect): Target 1 "Sky Striker" Spell trong GY -> Banish nó và nhận hiệu ứng lá bài đó đến cuối lượt
+	-- Hiệu ứng 1: Nếu lá bài này được Special Summon -> Chọn 1 lá "Sky Striker" từ Deck thêm lên tay hoặc gửi xuống Mộ
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_REMOVE)
-	e1:SetType(EFFECT_TYPE_QUICK_O)
-	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e1:SetRange(LOCATION_MZONE)
+	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_TOGRAVE+CATEGORY_SEARCH)
+	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.cptg)
-	e1:SetOperation(s.cpop)
+	e1:SetTarget(s.thtg)
+	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
 	-- Hiệu ứng 2: Tribute lá bài này -> Special Summon 1 quái "Sky Striker Ace" từ GY hoặc bị Banish (trừ "Omega Zero")
@@ -35,26 +34,42 @@ end
 s.listed_series={SET_SKY_STRIKER,SET_SKY_STRIKER_ACE}
 
 --------------------------------------------------------------------------------
--- HIỆU ỨNG 1: COPY HIỆU ỨNG SPELL TỪ GY
+-- HIỆU ỨNG 1: SEARCH HOẶC MILL KHI SPECIAL SUMMON
 --------------------------------------------------------------------------------
-function s.cpfilter(c)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsSpell() and c:IsAbleToRemove()
+function s.thfilter(c)
+	return c:IsSetCard(SET_SKY_STRIKER) and (c:IsAbleToHand() or c:IsAbleToGrave())
 end
 
-function s.cptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.cpfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.cpfilter,tp,LOCATION_GRAVE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectTarget(tp,s.cpfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
 end
 
-function s.cpop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 and c:IsRelateToEffect(e) and c:IsFaceup() then
-		-- Sao chép tên và hiệu ứng của lá Spell bị Banish cho đến cuối lượt
-		c:CopyEffect(tc:GetCode(),RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,1)
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SELECT)
+	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
+	if #g>0 then
+		local tc=g:GetFirst()
+		local b1=tc:IsAbleToHand()
+		local b2=tc:IsAbleToGrave()
+		local op=0
+		if b1 and b2 then
+			op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0: Thêm lên tay, 1: Gửi xuống Mộ
+		elseif b1 then
+			op=0
+		elseif b2 then
+			op=1
+		else
+			return
+		end
+		
+		if op==0 then
+			Duel.SendtoHand(tc,nil,REASON_EFFECT)
+			Duel.ConfirmCards(1-tp,tc)
+		else
+			Duel.SendtoGrave(tc,REASON_EFFECT)
+		end
 	end
 end
 
