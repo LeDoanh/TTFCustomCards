@@ -10,8 +10,8 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-	-- Link Summon procedure: 2+ Spellcaster or Zombie monsters
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER+RACE_ZOMBIE),2)
+	-- Link Summon: 2+ Spellcaster hoặc Zombie (min 2, max 3)
+	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER+RACE_ZOMBIE),2,3)
 	c:EnableReviveLimit()
 
 	-- You can only control 1 "Flower Spirit – Astral Nightfall"
@@ -105,7 +105,8 @@ end
 -- Effect 2
 function s.chainop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if re:GetHandler()==c and c:GetLinkedGroupCount()>=2 then
+	local lg=c:GetLinkedGroup()
+	if re:GetHandler()==c and lg and lg:FilterCount(Card.IsType,nil,TYPE_MONSTER)>=2 then
 		Duel.SetChainLimit(function(e,ep,tp) return ep==tp end)
 	end
 end

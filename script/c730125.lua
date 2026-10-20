@@ -13,18 +13,12 @@ function s.initial_effect(c)
 	-- Kích hoạt cơ chế Pendulum
 	Pendulum.AddProcedure(c)
 
-	-- Synchro Summon procedure: 1 Tuner + 1+ non-Tuner
-	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
+	-- Synchro Summon procedure: Cho phép 1 Tuner hoặc 1 Normal Monster điều khiển làm Tuner
+	local f1=function(c,scard,sumtype,tp)
+		return c:IsType(TYPE_TUNER,scard,sumtype,tp) or (c:IsControler(tp) and c:IsType(TYPE_NORMAL))
+	end
+	Synchro.AddProcedure(c,f1,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
-
-	-- Cho phép xem 1 Normal Monster điều khiển như Tuner khi Synchro Summon lá này
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_FIELD)
-	e0:SetCode(EFFECT_SYNCHRO_MATERIAL_CUSTOM)
-	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e0:SetTargetRange(LOCATION_MZONE,0)
-	e0:SetTarget(s.synchrotg)
-	c:RegisterEffect(e0)
 
 	-- ============================================================
 	-- Pendulum Effect
@@ -87,11 +81,6 @@ function s.initial_effect(c)
 end
 
 s.listed_series={0x702,0xb24}
-
--- Cờ xem Normal Monster như Tuner
-function s.synchrotg(e,c)
-	return c:IsType(TYPE_NORMAL)
-end
 
 -- Pendulum Effect Logic
 function s.penfilter(c)
@@ -162,7 +151,6 @@ function s.oppspellfilter(c)
 	return c:IsType(TYPE_SPELL) and c:IsAbleToGrave()
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
-	-- Opponent can send 1 Spell from hand or field to GY to avoid negate
 	local g=Duel.GetMatchingGroup(s.oppspellfilter,1-tp,LOCATION_HAND+LOCATION_ONFIELD,0,nil)
 	if #g>0 and Duel.SelectYesNo(1-tp,aux.Stringid(id,5)) then
 		Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_TOGRAVE)
