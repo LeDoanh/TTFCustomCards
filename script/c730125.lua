@@ -2,7 +2,7 @@
 -- Card Name: Witch of Nightbloom
 -- Passcode : 730125
 -- Type     : Synchro / Pendulum / Effect Monster
--- Level 8 | Scale 1 | WATER | Spellcaster
+-- Level 8 | Scale 1/1 | WATER | Spellcaster
 -- ATK 3000 / DEF 2800
 -- Archetype: Nightbloom (0xb24)
 -- ============================================================
@@ -13,11 +13,14 @@ function s.initial_effect(c)
 	-- Kích hoạt cơ chế Pendulum
 	Pendulum.AddProcedure(c)
 
-	-- Synchro Summon procedure: Cho phép 1 Tuner hoặc 1 Normal Monster điều khiển làm Tuner
+	-- Synchro Summon: 1 Tuner (hoặc 1 Normal Monster điều khiển) + 1+ non-Tuner
 	local f1=function(c,scard,sumtype,tp)
 		return c:IsType(TYPE_TUNER,scard,sumtype,tp) or (c:IsControler(tp) and c:IsType(TYPE_NORMAL))
 	end
-	Synchro.AddProcedure(c,f1,1,1,Synchro.NonTuner(nil),1,99)
+	local f2=function(c,scard,sumtype,tp)
+		return true
+	end
+	Synchro.AddProcedure(c,f1,1,1,f2,1,99)
 	c:EnableReviveLimit()
 
 	-- ============================================================
