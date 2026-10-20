@@ -4,28 +4,30 @@
 -- Type     : Synchro / Pendulum / Effect Monster
 -- Level 8 | Scale 1/1 | WATER | Spellcaster
 -- ATK 3000 / DEF 2800
--- Archetype: Nightbloom (0xb24)
+-- Archetype: Nightbloom (0xb24), Flower Spirit (0x702)
 -- ============================================================
 
 local s,id=GetID()
 
 function s.initial_effect(c)
-	-- Kích hoạt cơ chế Pendulum
+	-- Kích hoạt Pendulum
 	Pendulum.AddProcedure(c)
-
-	-- Synchro Summon procedure theo chuẩn Chaos Angel:
-	-- Cho phép Normal Monster trên sân của bạn được tính là Tuner
-	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
 
-	-- Cơ chế Treat Normal Monster as Tuner giống Chaos Angel
+	-- ============================================================
+	-- Synchro Summon Procedure Tùy biến (Custom)
+	-- Cho phép: 1 Tuner chuẩn HOẶC 1 Normal Monster (tính như Tuner) + 1+ Non-Tuner
+	-- ============================================================
 	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e0:SetCode(EFFECT_SYNCHRO_MATERIAL_CUSTOM)
-	e0:SetTarget(s.syntarget)
+	e0:SetDescription(1164)
+	e0:SetType(EFFECT_TYPE_FIELD)
+	e0:SetCode(EFFECT_SPSUMMON_PROC)
+	e0:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_IGNORE_IMMUNE)
+	e0:SetRange(LOCATION_EXTRA)
+	e0:SetCondition(s.syncon)
+	e0:SetTarget(s.syntg)
 	e0:SetOperation(s.synop)
-	e0:SetValue(1)
+	e0:SetValue(SUMMON_TYPE_SYNCHRO)
 	c:RegisterEffect(e0)
 
 	-- ============================================================
@@ -91,40 +93,64 @@ end
 s.listed_series={0x702,0xb24}
 
 -- ============================================================
--- Logic kiểm tra nguyên liệu chuẩn Chaos Angel
+-- Xử lý Synchro Custom: Normal Monster được tính như Tuner
 -- ============================================================
-function s.tuner_filter(c,sc,tp)
-	return c:IsType(TYPE_TUNER,sc,SUMMON_TYPE_SYNCHRO,tp) or (c:IsControler(tp) and c:IsLocation(LOCATION_MZONE) and c:IsType(TYPE_NORMAL))
+function s.matfilter(c,sc)
+	return c:IsFaceup() and c:IsCanBeSynchroMaterial(sc) and c:GetSynchroLevel(sc)>0
 end
 
-function s.syntarget(e,syncard,f,min,max)
-	local tp=syncard:GetControler()
-	local mg=Duel.GetSynchroMaterial(tp)
-	return mg:IsExists(s.synfilter,1,nil,syncard,mg,tp)
+function s.tunerfilter(c,sc,tp)
+	return s.matfilter(c,sc) and (c:IsType(TYPE_TUNER) or (c:IsControler(tp) and c:IsType(TYPE_NORMAL)))
 end
 
-function s.synfilter(c,syncard,mg,tp)
-	if not s.tuner_filter(c,syncard,tp) then return false end
-	local tg=mg:Clone()
+function s.nontunerfilter(c,sc)
+	return s.matfilter(c,sc)
+end
+
+function s.syncon(e,c,tuner,mg)
+	if c==nil then return true end
+	local tp=c:GetControler()
+	if Duel.GetLocationCountFromEx(tp,tp,nil,c)<=0 then return false end
+	local g=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE,0,nil,c)
+	return g:IsExists(s.syncheck,1,nil,g,c,tp)
+end
+
+function s.syncheck(c,g,sc,tp)
+	if not s.tunerfilter(c,sc,tp) then return false end
+	local tg=g:Clone()
 	tg:RemoveCard(c)
-	return tg:CheckWithSumEqual(Card.GetSynchroLevel,8,1,99,syncard)
+	local lv=8-c:GetSynchroLevel(sc)
+	if lv<=0 then return false end
+	return tg:CheckWithSumEqual(Card.GetSynchroLevel,lv,1,99,sc)
 end
 
-function s.synop(e,tp,eg,ep,ev,re,r,rp,syncard,f,min,max)
-	local mg=Duel.GetSynchroMaterial(tp)
+function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk,c,tuner,mg)
+	local g=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE,0,nil,c)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SMATERIAL)
-	local tunc=mg:FilterSelect(tp,s.synfilter,1,1,nil,syncard,mg,tp):GetFirst()
-	mg:RemoveCard(tunc)
-	local lv=8-tunc:GetSynchroLevel(syncard)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SMATERIAL)
-	local mat=mg:SelectWithSumEqual(tp,Card.GetSynchroLevel,8-tunc:GetSynchroLevel(syncard),1,99,syncard)
-	mat:AddCard(tunc)
-	syncard:SetMaterial(mat)
+	local tc=g:FilterSelect(tp,s.syncheck,1,1,nil,g,c,tp):GetFirst()
+	if tc then
+		local tg=g:Clone()
+		tg:RemoveCard(tc)
+		local lv=8-tc:GetSynchroLevel(c)
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SMATERIAL)
+		local mat=tg:SelectWithSumEqual(tp,Card.GetSynchroLevel,lv,1,99,c)
+		mat:AddCard(tc)
+		mat:KeepAlive()
+		e:SetLabelObject(mat)
+		return true
+	end
+	return false
+end
+
+function s.synop(e,tp,eg,ep,ev,re,r,rp,c,tuner,mg)
+	local mat=e:GetLabelObject()
+	c:SetMaterial(mat)
 	Duel.SendtoGrave(mat,REASON_MATERIAL+REASON_SYNCHRO)
+	mat:DeleteGroup()
 end
 
 -- ============================================================
--- Pendulum Effect
+-- Pendulum Effect Logic
 -- ============================================================
 function s.penfilter(c)
 	return (c:IsSetCard(0x702) or c:IsSetCard(0xb24)) and c:IsType(TYPE_SPELL) and c:IsAbleToRemove()
@@ -210,7 +236,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- ============================================================
--- Monster Effect 3: Destroyed -> PZone
+-- Monster Effect 3: Destroyed -> Place to PZone
 -- ============================================================
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
