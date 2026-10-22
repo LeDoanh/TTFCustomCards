@@ -1,24 +1,14 @@
--- Purrfect Coven - The Grand Mystery
+-- c7770011: Purrfect Coven – The Grand Mystery
 local s,id=GetID()
 local SET_PURRFECT=0x777
+
 function s.initial_effect(c)
-	-- Xyz Summon
-	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER),2,3)
 	c:EnableReviveLimit()
+	-- 1. Thủ tục gọi Xyz chuẩn: 3 quái Spellcaster Level 2
+	-- VÀ Thủ tục Alternative Xyz Summon: Chồng lên 1 quái Xyz "Purrfect" bất kỳ đang điều khiển
+	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER),2,3,s.ovfilter,aux.Stringid(id,0),99,s.ovop)
 
-	-- Special Summon procedure stacking over Purrfect Xyz
-	local e0=Effect.CreateEffect(c)
-	e0:SetDescription(aux.Stringid(id,0))
-	e0:SetType(EFFECT_TYPE_FIELD)
-	e0:SetCode(EFFECT_SPSUMMON_PROC)
-	e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e0:SetRange(LOCATION_EXTRA)
-	e0:SetCondition(s.spcon)
-	e0:SetTarget(s.sptg)
-	e0:SetOperation(s.spop)
-	c:RegisterEffect(e0)
-
-	-- Immune to effects granted by materials
+	-- 2. Kháng toàn bộ hiệu ứng cấp bởi nguyên liệu đính kèm
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -27,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetValue(s.matimmval)
 	c:RegisterEffect(e1)
 
-	-- Cannot be material
+	-- 3. Cấm làm nguyên liệu cho Fusion, Synchro, Xyz, Link
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -44,7 +34,7 @@ function s.initial_effect(c)
 	e5:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
 	c:RegisterEffect(e5)
 
-	-- Quick Effect: Detach 1 material from 1 Purrfect Xyz on the field
+	-- 4. Quick Effect: Tháo 1 nguyên liệu từ 1 quái Purrfect Xyz trên sân
 	local e6=Effect.CreateEffect(c)
 	e6:SetDescription(aux.Stringid(id,1))
 	e6:SetType(EFFECT_TYPE_QUICK_O)
@@ -56,7 +46,7 @@ function s.initial_effect(c)
 	e6:SetOperation(s.detop)
 	c:RegisterEffect(e6)
 
-	-- Trigger: Bottom deck opponent face-up card when material detached or control changes
+	-- 5. Trigger: Đẩy 1 lá ngửa của đối phương về đáy Deck khi có quái đổi sân hoặc nguyên liệu bị tháo
 	local e7=Effect.CreateEffect(c)
 	e7:SetDescription(aux.Stringid(id,2))
 	e7:SetCategory(CATEGORY_TODECK)
@@ -76,36 +66,17 @@ function s.initial_effect(c)
 end
 s.listed_series={SET_PURRFECT}
 
-function s.spfilter(c,tp,sc)
-	return c:IsFaceup() and c:IsSetCard(SET_PURRFECT) and c:IsType(TYPE_XYZ) and not c:IsCode(id)
-		and c:IsCanBeXyzMaterial(sc)
+-- Điều kiện lọc quái để chồng lên: Phải là quái Xyz "Purrfect", đang ngửa mặt và không phải chính nó
+function s.ovfilter(c,tp,lc)
+	return c:IsFaceup() and c:IsSetCard(SET_PURRFECT) and c:IsType(TYPE_XYZ,lc,SUMMON_TYPE_XYZ,tp) and not c:IsCode(id)
 end
-function s.spcon(e,c)
-	if c==nil then return true end
-	local tp=c:GetControler()
-	return Duel.GetLocationCountFromEx(tp,tp,nil,c)>0
-		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil,tp,c)
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_MZONE,0,1,1,nil,tp,c)
-	if #g>0 then
-		g:KeepAlive()
-		e:SetLabelObject(g)
-		return true
-	end
-	return false
-end
-function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
-	local g=e:GetLabelObject()
-	if not g then return end
-	local tc=g:GetFirst()
-	local mg=tc:GetOverlayGroup()
+
+-- Thao tác chồng: Chuyển toàn bộ nguyên liệu cũ sang con Boss
+function s.ovop(e,tp,chk,mc)
+	local mg=mc:GetOverlayGroup()
 	if #mg~=0 then
-		Duel.Overlay(c,mg)
+		Duel.Overlay(e:GetHandler(),mg)
 	end
-	c:SetMaterial(Group.FromCards(tc))
-	Duel.Overlay(c,Group.FromCards(tc))
-	g:DeleteGroup()
 end
 
 function s.matimmval(e,te)
