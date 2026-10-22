@@ -1,6 +1,7 @@
--- Purrfect Maid - Minty Starlight
+-- c7770006: Purrfect Maid – Minty Starlight
 local s,id=GetID()
 local SET_PURRFECT=0x777
+
 function s.initial_effect(c)
 	-- Special Summon and attach 1 Purrfect card
 	local e1=Effect.CreateEffect(c)
@@ -27,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.ctop)
 	c:RegisterEffect(e2)
 
-	-- Material grant: Each time controller Special Summons, must send 1 card from hand/field to GY
+	-- Material grant: Send 1 card from hand to GY when controller Special Summons
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -93,15 +94,18 @@ end
 
 function s.sscon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsLocation(LOCATION_MZONE) and eg:IsExists(Card.IsControler,1,nil,c:GetControler())
+	return c:IsLocation(LOCATION_MZONE) and not eg:IsContains(c)
+		and eg:IsExists(function(tc,p) return tc:IsControler(p) and tc:GetSummonPlayer()==p end,1,nil,c:GetControler())
 end
 function s.ssop(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetHandler():GetControler()
-	Duel.Hint(HINT_CARD,0,id)
-	Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TOGRAVE)
-	local g=Duel.SelectMatchingCard(p,nil,p,LOCATION_HAND+LOCATION_ONFIELD,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoGrave(g,REASON_EFFECT)
+	if Duel.GetFieldGroupCount(p,LOCATION_HAND,0)>0 then
+		Duel.Hint(HINT_CARD,0,id)
+		Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TOGRAVE)
+		local g=Duel.SelectMatchingCard(p,nil,p,LOCATION_HAND,0,1,1,nil)
+		if #g>0 then
+			Duel.SendtoGrave(g,REASON_EFFECT)
+		end
 	end
 end
 
