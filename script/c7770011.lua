@@ -5,8 +5,8 @@ local SET_PURRFECT=0x777
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	-- 1. Thủ tục gọi Xyz chuẩn: 3 quái Spellcaster Level 2
-	-- VÀ Thủ tục Alternative Xyz Summon: Chồng lên 1 quái Xyz "Purrfect" bất kỳ đang điều khiển
-	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER),2,3,s.ovfilter,aux.Stringid(id,0),99,s.ovop)
+	-- VÀ Thủ tục Alternative Xyz Summon: Chồng lên đúng 1 quái Xyz "Purrfect" (max_mat = 1)
+	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER),2,3,s.ovfilter,aux.Stringid(id,0),1,s.ovop)
 
 	-- 2. Kháng toàn bộ hiệu ứng cấp bởi nguyên liệu đính kèm
 	local e1=Effect.CreateEffect(c)
@@ -66,12 +66,10 @@ function s.initial_effect(c)
 end
 s.listed_series={SET_PURRFECT}
 
--- Điều kiện lọc quái để chồng lên: Phải là quái Xyz "Purrfect", đang ngửa mặt và không phải chính nó
 function s.ovfilter(c,tp,lc)
 	return c:IsFaceup() and c:IsSetCard(SET_PURRFECT) and c:IsType(TYPE_XYZ,lc,SUMMON_TYPE_XYZ,tp) and not c:IsCode(id)
 end
 
--- Thao tác chồng: Chuyển toàn bộ nguyên liệu cũ sang con Boss
 function s.ovop(e,tp,chk,mc)
 	local mg=mc:GetOverlayGroup()
 	if #mg~=0 then
