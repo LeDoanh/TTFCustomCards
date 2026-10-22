@@ -29,13 +29,15 @@ function s.initial_effect(c)
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e3)
 
-	-- Material grant: Give control
+	-- Material grant: Give control (Only owner can activate, once per turn)
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
 	e4:SetCategory(CATEGORY_CONTROL)
 	e4:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_FREE_CHAIN)
 	e4:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
+	e4:SetCountLimit(1)
+	e4:SetCondition(s.ctcon)
 	e4:SetTarget(s.cttg)
 	e4:SetOperation(s.ctop)
 	c:RegisterEffect(e4)
@@ -113,6 +115,10 @@ function s.extralimit(e,c,sump,sumtype,sumpos,targetp,se)
 	return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_XYZ)
 end
 
+function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	return c:GetControler()==c:GetOwner()
+end
 function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return c:IsControlerCanBeChanged() end

@@ -2,7 +2,7 @@
 local s,id=GetID()
 local SET_PURRFECT=0x777
 function s.initial_effect(c)
-	-- Search on Summon
+	-- Search on Normal/Special Summon
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -18,18 +18,20 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 
 	-- Grant effects to Xyz Monster
-	-- Quick Effect: Give control
+	-- 1) Quick Effect: Give control to opponent (Only owner can activate, once per turn)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_CONTROL)
 	e3:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
+	e3:SetCountLimit(1)
+	e3:SetCondition(s.ctcon)
 	e3:SetTarget(s.cttg)
 	e3:SetOperation(s.ctop)
 	c:RegisterEffect(e3)
 
-	-- Continuous: Cannot draw by card effects
+	-- 2) Continuous Aura: Controller cannot draw by card effects
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_FIELD)
 	e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -39,7 +41,7 @@ function s.initial_effect(c)
 	e4:SetTarget(s.drawlimit)
 	c:RegisterEffect(e4)
 
-	-- Detach trigger: Owner draws 1
+	-- Detach trigger: Owner draws 1 card
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,2))
 	e5:SetCategory(CATEGORY_DRAW)
@@ -69,6 +71,10 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	return c:GetControler()==c:GetOwner()
+end
 function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return c:IsControlerCanBeChanged() end
