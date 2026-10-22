@@ -4,11 +4,23 @@ local SET_PURRFECT=0x777
 
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	-- 1. Thủ tục gọi Xyz chuẩn: 3 quái Spellcaster Level 2
-	-- VÀ Thủ tục Alternative Xyz Summon: Chồng lên đúng 1 quái Xyz "Purrfect" (max_mat = 1)
-	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER),2,3,s.ovfilter,aux.Stringid(id,0),1,s.ovop)
+	-- 1. Trieu hoi Xyz chuan: 3 quai Level 2 Spellcaster
+	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER),2,3)
 
-	-- 2. Kháng toàn bộ hiệu ứng cấp bởi nguyên liệu đính kèm
+	-- 2. Thu tuc Special Summon dac biet bang cach de len 1 Purrfect Xyz bat ky tren san
+	local e0=Effect.CreateEffect(c)
+	e0:SetDescription(aux.Stringid(id,0))
+	e0:SetType(EFFECT_TYPE_FIELD)
+	e0:SetCode(EFFECT_SPSUMMON_PROC)
+	e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+	e0:SetRange(LOCATION_EXTRA)
+	e0:SetCondition(s.spcon)
+	e0:SetTarget(s.sptg)
+	e0:SetOperation(s.spop)
+	e0:SetValue(SUMMON_TYPE_XYZ)
+	c:RegisterEffect(e0)
+
+	-- 3. Khang toan bo hieu ung cap boi nguyen lieu
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -17,7 +29,7 @@ function s.initial_effect(c)
 	e1:SetValue(s.matimmval)
 	c:RegisterEffect(e1)
 
-	-- 3. Cấm làm nguyên liệu cho Fusion, Synchro, Xyz, Link
+	-- 4. Cam lam nguyen lieu
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -34,7 +46,7 @@ function s.initial_effect(c)
 	e5:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
 	c:RegisterEffect(e5)
 
-	-- 4. Quick Effect: Tháo 1 nguyên liệu từ 1 quái Purrfect Xyz trên sân
+	-- 5. Quick Effect: Thao 1 nguyen lieu tu 1 quai Purrfect Xyz tren san
 	local e6=Effect.CreateEffect(c)
 	e6:SetDescription(aux.Stringid(id,1))
 	e6:SetType(EFFECT_TYPE_QUICK_O)
@@ -46,7 +58,7 @@ function s.initial_effect(c)
 	e6:SetOperation(s.detop)
 	c:RegisterEffect(e6)
 
-	-- 5. Trigger: Đẩy 1 lá ngửa của đối phương về đáy Deck khi có quái đổi sân hoặc nguyên liệu bị tháo
+	-- 6. Trigger: Day 1 la ngua ve day Deck
 	local e7=Effect.CreateEffect(c)
 	e7:SetDescription(aux.Stringid(id,2))
 	e7:SetCategory(CATEGORY_TODECK)
@@ -66,15 +78,37 @@ function s.initial_effect(c)
 end
 s.listed_series={SET_PURRFECT}
 
-function s.ovfilter(c,tp,lc)
-	return c:IsFaceup() and c:IsSetCard(SET_PURRFECT) and c:IsType(TYPE_XYZ,lc,SUMMON_TYPE_XYZ,tp) and not c:IsCode(id)
+-- Chi can la quai Xyz Purrfect ngua mat tren san (khong kiem tra CanBeXyzMaterial de tranh bi chan)
+function s.spfilter(c,tp)
+	return c:IsFaceup() and c:IsSetCard(SET_PURRFECT) and c:IsType(TYPE_XYZ) and not c:IsCode(id)
 end
-
-function s.ovop(e,tp,chk,mc)
-	local mg=mc:GetOverlayGroup()
-	if #mg~=0 then
-		Duel.Overlay(e:GetHandler(),mg)
+function s.spcon(e,c)
+	if c==nil then return true end
+	local tp=c:GetControler()
+	return Duel.GetLocationCountFromEx(tp,tp,nil,c)>0
+		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil,tp)
+end
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
+	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_MZONE,0,1,1,nil,tp)
+	if #g>0 then
+		g:KeepAlive()
+		e:SetLabelObject(g)
+		return true
 	end
+	return false
+end
+function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
+	local g=e:GetLabelObject()
+	if not g then return end
+	local tc=g:GetFirst()
+	local mg=tc:GetOverlayGroup()
+	if #mg~=0 then
+		Duel.Overlay(c,mg)
+	end
+	c:SetMaterial(Group.FromCards(tc))
+	Duel.Overlay(c,Group.FromCards(tc))
+	g:DeleteGroup()
 end
 
 function s.matimmval(e,te)
