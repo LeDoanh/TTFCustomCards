@@ -103,7 +103,7 @@ end
 
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsReason(REASON_COST) and re:IsActivated() and re:IsActiveType(TYPE_XYZ)
+	return c:IsPreviousLocation(LOCATION_OVERLAY)
 		and c:GetPreviousLocation()==LOCATION_OVERLAY and c:IsControler(c:GetOwner())
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)

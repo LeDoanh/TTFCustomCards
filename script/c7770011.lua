@@ -1,13 +1,12 @@
--- c7770011: Purrfect Coven – The Grand Mystery
+-- c7770011: Purrfect Coven - The Grand Mystery
 local s,id=GetID()
 local SET_PURRFECT=0x777
-
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	-- 1. Trieu hoi Xyz chuan: 3 quai Level 2 Spellcaster
+	-- 1. Standard Xyz Summon: 3 Level 2 Spellcaster
 	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_SPELLCASTER),2,3)
 
-	-- 2. Thu tuc Special Summon dac biet bang cach de len 1 Purrfect Xyz bat ky tren san
+	-- 2. Alternative Summon: Stack over 1 Purrfect Xyz
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
 	e0:SetType(EFFECT_TYPE_FIELD)
@@ -20,65 +19,80 @@ function s.initial_effect(c)
 	e0:SetValue(SUMMON_TYPE_XYZ)
 	c:RegisterEffect(e0)
 
-	-- 3. Khang toan bo hieu ung cap boi nguyen lieu
+	-- 3. Gains 500 ATK/DEF for each attached material
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_UPDATE_ATTACK)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetCode(EFFECT_IMMUNE_EFFECT)
-	e1:SetValue(s.matimmval)
+	e1:SetValue(s.atkval)
 	c:RegisterEffect(e1)
-
-	-- 4. Cam lam nguyen lieu
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e2:SetCode(EFFECT_CANNOT_BE_FUSION_MATERIAL)
-	e2:SetValue(1)
+	local e2=e1:Clone()
+	e2:SetCode(EFFECT_UPDATE_DEFENSE)
 	c:RegisterEffect(e2)
-	local e3=e2:Clone()
-	e3:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
+
+	-- 4. Immune to effects granted by materials
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCode(EFFECT_IMMUNE_EFFECT)
+	e3:SetValue(s.matimmval)
 	c:RegisterEffect(e3)
-	local e4=e2:Clone()
-	e4:SetCode(EFFECT_CANNOT_BE_XYZ_MATERIAL)
+
+	-- 5. Cannot be used as material
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e4:SetCode(EFFECT_CANNOT_BE_FUSION_MATERIAL)
+	e4:SetValue(1)
 	c:RegisterEffect(e4)
-	local e5=e2:Clone()
-	e5:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
+	local e5=e4:Clone()
+	e5:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
 	c:RegisterEffect(e5)
-
-	-- 5. Quick Effect: Thao 1 nguyen lieu tu 1 quai Purrfect Xyz tren san
-	local e6=Effect.CreateEffect(c)
-	e6:SetDescription(aux.Stringid(id,1))
-	e6:SetType(EFFECT_TYPE_QUICK_O)
-	e6:SetCode(EVENT_FREE_CHAIN)
-	e6:SetRange(LOCATION_MZONE)
-	e6:SetCountLimit(1,id)
-	e6:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e6:SetTarget(s.dettg)
-	e6:SetOperation(s.detop)
+	local e6=e4:Clone()
+	e6:SetCode(EFFECT_CANNOT_BE_XYZ_MATERIAL)
 	c:RegisterEffect(e6)
-
-	-- 6. Trigger: Day 1 la ngua ve day Deck
-	local e7=Effect.CreateEffect(c)
-	e7:SetDescription(aux.Stringid(id,2))
-	e7:SetCategory(CATEGORY_TODECK)
-	e7:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e7:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
-	e7:SetCode(EVENT_CONTROL_CHANGED)
-	e7:SetRange(LOCATION_MZONE)
-	e7:SetCountLimit(1,id+100)
-	e7:SetCondition(s.tdcon1)
-	e7:SetTarget(s.tdtg)
-	e7:SetOperation(s.tdop)
+	local e7=e4:Clone()
+	e7:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
 	c:RegisterEffect(e7)
-	local e8=e7:Clone()
-	e8:SetCode(EVENT_DETACH_MATERIAL)
-	e8:SetCondition(s.tdcon2)
+
+	-- 6. Quick Effect: Detach 1 material from 1 Purrfect Xyz on the field
+	local e8=Effect.CreateEffect(c)
+	e8:SetDescription(aux.Stringid(id,1))
+	e8:SetType(EFFECT_TYPE_QUICK_O)
+	e8:SetCode(EVENT_FREE_CHAIN)
+	e8:SetRange(LOCATION_MZONE)
+	e8:SetCountLimit(1,id)
+	e8:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e8:SetTarget(s.dettg)
+	e8:SetOperation(s.detop)
 	c:RegisterEffect(e8)
+
+	-- 7. Trigger: Bottom deck opponent face-up card when material detached or control changes
+	local e9=Effect.CreateEffect(c)
+	e9:SetDescription(aux.Stringid(id,2))
+	e9:SetCategory(CATEGORY_TODECK)
+	e9:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e9:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e9:SetCode(EVENT_CONTROL_CHANGED)
+	e9:SetRange(LOCATION_MZONE)
+	e9:SetCountLimit(1,id+100)
+	e9:SetCondition(s.tdcon1)
+	e9:SetTarget(s.tdtg)
+	e9:SetOperation(s.tdop)
+	c:RegisterEffect(e9)
+	local e10=e9:Clone()
+	e10:SetCode(EVENT_TO_GRAVE)
+	e10:SetCondition(s.tdcon_det)
+	c:RegisterEffect(e10)
+	local e11=e9:Clone()
+	e11:SetCode(EVENT_REMOVE)
+	e11:SetCondition(s.tdcon_det)
+	c:RegisterEffect(e11)
 end
 s.listed_series={SET_PURRFECT}
 
--- Chi can la quai Xyz Purrfect ngua mat tren san (khong kiem tra CanBeXyzMaterial de tranh bi chan)
 function s.spfilter(c,tp)
 	return c:IsFaceup() and c:IsSetCard(SET_PURRFECT) and c:IsType(TYPE_XYZ) and not c:IsCode(id)
 end
@@ -109,6 +123,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	c:SetMaterial(Group.FromCards(tc))
 	Duel.Overlay(c,Group.FromCards(tc))
 	g:DeleteGroup()
+end
+
+function s.atkval(e,c)
+	return c:GetOverlayCount()*500
 end
 
 function s.matimmval(e,te)
@@ -145,9 +163,10 @@ end
 function s.tdcon1(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(tc) return tc:IsType(TYPE_XYZ) and tc:GetOwner()==tp end,1,nil)
 end
-function s.tdcon2(e,tp,eg,ep,ev,re,r,rp)
-	return true
+function s.tdcon_det(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(function(tc) return tc:IsPreviousLocation(LOCATION_OVERLAY) end,1,nil)
 end
+
 function s.tdfilter(c)
 	return c:IsFaceup() and c:IsAbleToDeck()
 end

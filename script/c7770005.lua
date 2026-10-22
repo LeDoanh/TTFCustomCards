@@ -1,7 +1,6 @@
--- c7770005: Purrfect Maid – Noir Mirage
+-- Purrfect Maid - Noir Mirage
 local s,id=GetID()
 local SET_PURRFECT=0x777
-
 function s.initial_effect(c)
 	-- Attach self from hand or GY
 	local e1=Effect.CreateEffect(c)
@@ -63,7 +62,7 @@ end
 function s.attop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
-	if c:IsRelateToEffect(e) and tc:IsRelateToEffect(e) and not tc:IsImmuneToEffect(e) then
+	if c:IsRelateToEffect(e) and tc:IsRelateToEffect(e) and not tc:IsDead() then
 		Duel.Overlay(tc,Group.FromCards(c))
 	end
 end
@@ -93,7 +92,7 @@ end
 
 function s.hdcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsReason(REASON_COST) and re:IsActivated() and re:IsActiveType(TYPE_XYZ)
+	return c:IsPreviousLocation(LOCATION_OVERLAY)
 		and c:GetPreviousLocation()==LOCATION_OVERLAY and c:IsControler(c:GetOwner())
 end
 function s.hdtg(e,tp,eg,ep,ev,re,r,rp,chk)

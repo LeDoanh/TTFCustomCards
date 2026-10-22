@@ -1,9 +1,8 @@
--- c7770006: Purrfect Maid – Minty Starlight
+-- Purrfect Maid - Minty Starlight
 local s,id=GetID()
 local SET_PURRFECT=0x777
-
 function s.initial_effect(c)
-	-- 1. Special Summon and attach 1 Purrfect card
+	-- Special Summon and attach 1 Purrfect card
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -15,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- 2. Material grant: Give control (Chi cho phep Owner kich hoat, 1 lan/luot)
+	-- Material grant: Give control (Only owner can activate, once per turn)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_CONTROL)
@@ -28,7 +27,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.ctop)
 	c:RegisterEffect(e2)
 
-	-- 3. Material grant: Khi Controller Special Summon, bat buoc gui 1 la tu TAY xuong Mo
+	-- Material grant: Each time controller Special Summons, must send 1 card from hand/field to GY
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -36,7 +35,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.ssop)
 	c:RegisterEffect(e3)
 
-	-- 4. Detach trigger: Add 1 Purrfect card from GY/banished to hand
+	-- Detach trigger: Add 1 Purrfect card from GY/banished to hand
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
 	e4:SetCategory(CATEGORY_TOHAND)
@@ -94,26 +93,21 @@ end
 
 function s.sscon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	-- Khong tinh chinh quai mang effect nay, va phai do nguoi dang dieu khien quai goi ra
-	return c:IsLocation(LOCATION_MZONE) and not eg:IsContains(c)
-		and eg:IsExists(function(tc,p) return tc:IsControler(p) and tc:GetSummonPlayer()==p end,1,nil,c:GetControler())
+	return c:IsLocation(LOCATION_MZONE) and eg:IsExists(Card.IsControler,1,nil,c:GetControler())
 end
 function s.ssop(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetHandler():GetControler()
-	-- Chi kiem tra va gui card tu TAY (LOCATION_HAND)
-	if Duel.GetFieldGroupCount(p,LOCATION_HAND,0)>0 then
-		Duel.Hint(HINT_CARD,0,id)
-		Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TOGRAVE)
-		local g=Duel.SelectMatchingCard(p,nil,p,LOCATION_HAND,0,1,1,nil)
-		if #g>0 then
-			Duel.SendtoGrave(g,REASON_EFFECT)
-		end
+	Duel.Hint(HINT_CARD,0,id)
+	Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TOGRAVE)
+	local g=Duel.SelectMatchingCard(p,nil,p,LOCATION_HAND+LOCATION_ONFIELD,0,1,1,nil)
+	if #g>0 then
+		Duel.SendtoGrave(g,REASON_EFFECT)
 	end
 end
 
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsReason(REASON_COST) and re:IsActivated() and re:IsActiveType(TYPE_XYZ)
+	return c:IsPreviousLocation(LOCATION_OVERLAY)
 		and c:GetPreviousLocation()==LOCATION_OVERLAY and c:IsControler(c:GetOwner())
 end
 function s.thfilter(c)
