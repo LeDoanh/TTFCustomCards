@@ -50,7 +50,7 @@ function s.initial_effect(c)
 	e7:SetType(EFFECT_TYPE_SINGLE)
 	e7:SetCode(EFFECT_CHANGE_BATTLE_DAMAGE)
 	e7:SetCondition(s.damcon)
-	e7:SetValue(aux.damval_2)
+	e7:SetValue(s.val_double)
 	c:RegisterEffect(e7)
 
 	-- Bắt buộc tháo 1 nguyên liệu vào End Phase của controller
@@ -90,6 +90,9 @@ function s.damcon(e)
 end
 function s.damval(e,damp)
 	return damp==1-e:GetHandler():GetControler()
+end
+function s.val_double(e,damp)
+	return damp*2
 end
 
 function s.epcon(e,tp,eg,ep,ev,re,r,rp)
