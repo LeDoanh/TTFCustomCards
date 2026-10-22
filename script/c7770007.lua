@@ -1,12 +1,13 @@
--- Purrfect Sleuth - Dual Infiltration
+-- c7770007: Purrfect Sleuth – Dual Infiltration
 local s,id=GetID()
 local SET_PURRFECT=0x777
+
 function s.initial_effect(c)
 	-- Xyz Summon
 	Xyz.AddProcedure(c,nil,2,2)
 	c:EnableReviveLimit()
 
-	-- Cannot be material
+	-- Cấm làm nguyên liệu Fusion, Synchro, Xyz, Link
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -23,7 +24,7 @@ function s.initial_effect(c)
 	e4:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
 	c:RegisterEffect(e4)
 
-	-- Send 1 Purrfect card on Xyz Summon
+	-- Gửi 1 lá "Purrfect" từ Deck xuống Mộ khi Xyz Summon
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,0))
 	e5:SetCategory(CATEGORY_TOGRAVE)
@@ -36,21 +37,23 @@ function s.initial_effect(c)
 	e5:SetOperation(s.tgop)
 	c:RegisterEffect(e5)
 
-	-- Damage doubling and inflicted to controller
+	-- Khi ở sân đối thủ: Phản toàn bộ damage về cho controller
 	local e6=Effect.CreateEffect(c)
 	e6:SetType(EFFECT_TYPE_SINGLE)
 	e6:SetCode(EFFECT_REFLECT_BATTLE_DAMAGE)
 	e6:SetCondition(s.damcon)
 	e6:SetValue(s.damval)
 	c:RegisterEffect(e6)
+
+	-- Nhân đôi Battle Damage mà controller phải nhận
 	local e7=Effect.CreateEffect(c)
 	e7:SetType(EFFECT_TYPE_SINGLE)
-	e7:SetCode(EFFECT_DOUBLE_BATTLE_DAMAGE)
+	e7:SetCode(EFFECT_CHANGE_BATTLE_DAMAGE)
 	e7:SetCondition(s.damcon)
-	e7:SetValue(1)
+	e7:SetValue(aux.damval_2)
 	c:RegisterEffect(e7)
 
-	-- End Phase forced detach
+	-- Bắt buộc tháo 1 nguyên liệu vào End Phase của controller
 	local e8=Effect.CreateEffect(c)
 	e8:SetDescription(aux.Stringid(id,1))
 	e8:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
