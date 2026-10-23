@@ -1,8 +1,9 @@
--- Purrfect Maid - Noir Mirage
+-- c7770005: Purrfect Maid – Noir Mirage
 local s,id=GetID()
 local SET_PURRFECT=0x777
+
 function s.initial_effect(c)
-	-- Attach self from hand or GY
+	-- 1. Kích hoạt từ tay/mộ: Gắn vào 1 Purrfect Xyz làm nguyên liệu
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_IGNITION)
@@ -13,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.attop)
 	c:RegisterEffect(e1)
 
-	-- Material grant: Give control (Only owner can activate, once per turn)
+	-- 2. Hiệu ứng cấp cho Xyz: Tặng quái sang sân đối thủ (Chỉ Owner kích hoạt, 1 lần/lượt)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_CONTROL)
@@ -26,7 +27,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.ctop)
 	c:RegisterEffect(e2)
 
-	-- Material grant: Lock controller from activating cards/effects in GY
+	-- 3. Hiệu ứng cấp cho Xyz: Khóa không cho Controller kích hoạt effect trong Mộ
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_FIELD)
 	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -36,7 +37,7 @@ function s.initial_effect(c)
 	e3:SetValue(s.aclimit)
 	c:RegisterEffect(e3)
 
-	-- Detach trigger: Banish 1 card from opponent hand face-down
+	-- 4. Khi bị Detach gửi xuống Mộ: Banish úp 1 lá ngẫu nhiên trên tay đối thủ đến End Phase
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
 	e4:SetCategory(CATEGORY_REMOVE)
@@ -50,6 +51,7 @@ function s.initial_effect(c)
 end
 s.listed_series={SET_PURRFECT}
 
+-- Bộ lọc mục tiêu nhận nguyên liệu
 function s.cfilter(c)
 	return c:IsFaceup() and c:IsSetCard(SET_PURRFECT) and c:IsType(TYPE_XYZ)
 end
@@ -62,11 +64,13 @@ end
 function s.attop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
-	if c:IsRelateToEffect(e) and tc:IsRelateToEffect(e) and not tc:IsDead() then
+	-- Sửa lỗi IsDead: Thay thế bằng kiểm tra kháng hiệu ứng chuẩn
+	if c:IsRelateToEffect(e) and tc:IsRelateToEffect(e) and not tc:IsImmuneToEffect(e) then
 		Duel.Overlay(tc,Group.FromCards(c))
 	end
 end
 
+-- Ràng buộc chỉ có Owner mới bấm tặng quái được
 function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:GetControler()==c:GetOwner()
@@ -83,6 +87,7 @@ function s.ctop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+-- Khóa kích hoạt hiệu ứng trong Mộ
 function s.auracon(e)
 	return e:GetHandler():IsLocation(LOCATION_MZONE)
 end
@@ -90,6 +95,7 @@ function s.aclimit(e,re,tp)
 	return re:GetActivateLocation()==LOCATION_GRAVE
 end
 
+-- Điều kiện Detach: Rụng từ Overlay và lý do là Cost hoặc Effect (không kích khi Xyz chết)
 function s.hdcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_OVERLAY) and (c:GetReason()&(REASON_COST|REASON_EFFECT))~=0
