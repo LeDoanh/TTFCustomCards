@@ -32,12 +32,20 @@ end
 
 s.listed_series={0x115} -- Sky Striker archetype code
 
--- Điều kiện chuẩn xác: Không có quái thú nào nằm ở Main Monster Zone của bạn
+-- Kiểm tra xem Field Spell Assembly Area (90600061) có đang hoạt động không
+function s.has_assembly_area(tp)
+    return Duel.IsExistingMatchingCard(function(c) 
+        return c:IsFaceup() and c:IsCode(90600061) and not c:IsDisabled() 
+    end, tp, LOCATION_FZONE, 0, 1, nil)
+end
+
+-- Condition kích hoạt: Không có quái thú ở Main Monster Zone (hoặc được bypass bởi Field Spell)
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
+    if s.has_assembly_area(tp) then return true end
     return not Duel.IsExistingMatchingCard(Card.IsLocation,tp,LOCATION_MZONE,0,1,nil,LOCATION_MZONE)
 end
 
--- Lọc "Sky Striker Ace" Link Monster trên sân để banish
+-- Lọc target trên sân
 function s.tgfilter(c,e,tp)
     return c:IsFaceup() and c:IsSetCard(0x115) and c:IsType(TYPE_LINK)
         and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c)
@@ -45,16 +53,16 @@ end
 
 -- Lọc quái thú Extra Deck có tên và Attribute khác
 function s.spfilter(c,e,tp,tc)
-    return c:IsSetCard(0x115) and c:IsType(TYPE_LINK) and not c:IsCode(tc:GetCode()) and not c:IsAttribute(tc:GetAttribute())
+    return c:IsSetCard(0x115) and c:IsType(TYPE_LINK) 
+        and not c:IsCode(tc:GetCode()) 
+        and not c:IsAttribute(tc:GetAttribute())
         and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-        and Duel.GetLocationCountFromEx(tp,tp,tc,c)>0
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.tgfilter(chkc,e,tp) end
     if chk==0 then 
-        return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-            and Duel.IsExistingTarget(s.tgfilter,tp,LOCATION_MZONE,0,1,nil,e,tp) 
+        return Duel.IsExistingTarget(s.tgfilter,tp,LOCATION_MZONE,0,1,nil,e,tp) 
     end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
     local g=Duel.SelectTarget(tp,s.tgfilter,tp,LOCATION_MZONE,0,1,1,nil,e,tp)
@@ -69,7 +77,7 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
         local sg=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,tc)
         local sc=sg:GetFirst()
         if sc and Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)>0 then
-            -- Kiểm tra nếu có từ 3 Spells trở lên trong GY thì gửi 1 card đối thủ xuống GY
+            -- Nếu có >= 3 Spells trong GY thì được gửi 1 card đối thủ xuống GY
             if Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3 
                 and Duel.IsExistingMatchingCard(nil,tp,0,LOCATION_ONFIELD,1,nil) 
                 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
@@ -84,7 +92,7 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Filter cho hiệu ứng dưới GY (Banish zone -> Add to hand hoặc Special Summon)
+-- Filter & Operation cho hiệu ứng GY
 function s.rmfilter(c,e,tp)
     return c:IsSetCard(0x115) and c:IsMonster() and c:IsFaceup()
         and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,false,false))
@@ -100,10 +108,10 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    local tag_card=Duel.GetFirstTarget()
-    if tag_card and tag_card:IsRelateToEffect(e) then
-        local b1=tag_card:IsAbleToHand()
-        local b2=tag_card:IsCanBeSpecialSummoned(e,0,tp,false,false) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+    local tc=Duel.GetFirstTarget()
+    if tc and tc:IsRelateToEffect(e) then
+        local b1=tc:IsAbleToHand()
+        local b2=tc:IsCanBeSpecialSummoned(e,0,tp,false,false) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         local op=0
         if b1 and b2 then
             op=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4))
@@ -115,10 +123,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
             return
         end
         if op==0 then
-            Duel.SendtoHand(tag_card,nil,REASON_EFFECT)
-            Duel.ConfirmCards(1-tp,tag_card)
+            Duel.SendtoHand(tc,nil,REASON_EFFECT)
+            Duel.ConfirmCards(1-tp,tc)
         else
-            Duel.SpecialSummon(tag_card,0,tp,tp,false,false,POS_FACEUP)
+            Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
         end
     end
 end
