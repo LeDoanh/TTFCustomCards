@@ -2,9 +2,9 @@
 -- ID: 90600090
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Điều kiện Link Summon: 5+ quái thú, bao gồm 2 quái thú Link "Æthel-Nemesis" và/hoặc "Sky Striker"
+    -- Điều kiện Link Summon: 5+ quái thú (bất kỳ quái thú nào), bao gồm 2 quái thú Link "Æthel-Nemesis" và/hoặc "Sky Striker"
     c:EnableReviveLimit()
-    Link.AddProcedure(c, aux.FilterBoolFunctionEqual(Card.IsType, TYPE_MONSTER), 5, 99, s.lcheck)
+    Link.AddProcedure(c, nil, 5, 99, s.lcheck)
 
     -- Must first be Link Summoned
     local e0=Effect.CreateEffect(c)
@@ -55,7 +55,7 @@ end
 -- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
 s.listed_series={0x115a, 0x115}
 
--- Kiểm tra nguyên liệu Link
+-- Kiểm tra nguyên liệu Link: Cần tối thiểu 2 quái thú Link thuộc archetype
 function s.lcheck(g,lc,sumtype,tp)
     return g:FilterCount(s.matfilter,nil,lc,sumtype,tp)>=2
 end
@@ -118,11 +118,9 @@ function s.exop(e,tp,eg,ep,ev,re,r,rp)
     if #g>0 and zone~=0 then
         Duel.ConfirmCards(tp,g)
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        -- Tham số "true" ở đây cho phép lọc cả quái thú có điều kiện triệu hồi đặc biệt
         local sg=g:FilterSelect(tp,Card.IsCanBeSpecialSummoned,1,1,nil,e,0,tp,true,false,POS_FACEUP,tp,zone)
         local tc=sg:GetFirst()
         if tc then
-            -- Tham số "true" ở đây bỏ qua điều kiện triệu hồi (ignoring its Summoning conditions)
             Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP,zone)
         end
         Duel.ShuffleExtra(1-tp)
