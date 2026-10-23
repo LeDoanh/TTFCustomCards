@@ -32,9 +32,9 @@ end
 
 s.listed_series={0x115} -- Sky Striker archetype code
 
--- Điều kiện: Không điều khiển quái thú nào trong Main Monster Zone
+-- Điều kiện chuẩn xác: Không có quái thú nào nằm ở Main Monster Zone của bạn
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-    return not Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsLocation,LOCATION_MZONE),tp,LOCATION_MZONE,0,1,nil)
+    return not Duel.IsExistingMatchingCard(Card.IsLocation,tp,LOCATION_MZONE,0,1,nil,LOCATION_MZONE)
 end
 
 -- Lọc "Sky Striker Ace" Link Monster trên sân để banish
@@ -100,10 +100,10 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    local tc=Duel.GetFirstTarget()
-    if tc and tc:IsRelateToEffect(e) then
-        local b1=tc:IsAbleToHand()
-        local b2=tc:IsCanBeSpecialSummoned(e,0,tp,false,false) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+    local tag_card=Duel.GetFirstTarget()
+    if tag_card and tag_card:IsRelateToEffect(e) then
+        local b1=tag_card:IsAbleToHand()
+        local b2=tag_card:IsCanBeSpecialSummoned(e,0,tp,false,false) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         local op=0
         if b1 and b2 then
             op=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4))
@@ -115,10 +115,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
             return
         end
         if op==0 then
-            Duel.SendtoHand(tc,nil,REASON_EFFECT)
-            Duel.ConfirmCards(1-tp,tc)
+            Duel.SendtoHand(tag_card,nil,REASON_EFFECT)
+            Duel.ConfirmCards(1-tp,tag_card)
         else
-            Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+            Duel.SpecialSummon(tag_card,0,tp,tp,false,false,POS_FACEUP)
         end
     end
 end

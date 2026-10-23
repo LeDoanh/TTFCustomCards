@@ -2,7 +2,7 @@
 -- ID: 90600090
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Điều kiện Link Summon: 5+ quái thú (bất kỳ quái thú nào), bao gồm 2 quái thú Link "Æthel-Nemesis" và/hoặc "Sky Striker"
+    -- Điều kiện Link Summon: 5+ quái thú, bao gồm 2 quái thú Link "Æthel-Nemesis" và/hoặc "Sky Striker"
     c:EnableReviveLimit()
     Link.AddProcedure(c, nil, 5, 99, s.lcheck)
 
@@ -11,7 +11,7 @@ function s.initial_effect(c)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(aux.linklimit)
+    e0:SetValue(s.splimit)
     c:RegisterEffect(e0)
 
     -- Hiệu ứng liên tục: Unaffected by opponent's card effects
@@ -54,6 +54,11 @@ end
 
 -- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
 s.listed_series={0x115a, 0x115}
+
+-- Hàm kiểm tra điều kiện Must first be Link Summoned
+function s.splimit(e,se,sp,st)
+    return not e:GetHandler():IsLocation(LOCATION_EXTRA) or (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK
+end
 
 -- Kiểm tra nguyên liệu Link: Cần tối thiểu 2 quái thú Link thuộc archetype
 function s.lcheck(g,lc,sumtype,tp)
