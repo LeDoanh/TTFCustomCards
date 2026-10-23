@@ -103,8 +103,7 @@ end
 
 function s.attcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_OVERLAY)
-		and c:GetPreviousLocation()==LOCATION_OVERLAY and c:IsControler(c:GetOwner())
+	return c:IsPreviousLocation(LOCATION_OVERLAY) and (c:GetReason()&(REASON_COST|REASON_EFFECT))~=0
 end
 function s.xyzfilter(c,tp)
 	return c:IsFaceup() and c:IsType(TYPE_XYZ) and (c:IsControler(tp) or c:GetOwner()==tp)

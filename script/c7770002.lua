@@ -100,6 +100,7 @@ function s.spop2(e,tp,eg,ep,ev,re,r,rp)
 			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
 		end
 	end
+	-- Extra Deck restriction
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
@@ -139,7 +140,7 @@ end
 
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_OVERLAY)
+	return c:IsPreviousLocation(LOCATION_OVERLAY) and (c:GetReason()&(REASON_COST|REASON_EFFECT))~=0
 end
 function s.gyfilter(c,e,tp)
 	return c:IsSetCard(SET_PURRFECT) and not c:IsCode(id) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)

@@ -164,7 +164,7 @@ function s.tdcon1(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(tc) return tc:IsType(TYPE_XYZ) and tc:GetOwner()==tp end,1,nil)
 end
 function s.tdcon_det(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(function(tc) return tc:IsPreviousLocation(LOCATION_OVERLAY) end,1,nil)
+	return eg:IsExists(function(tc) return tc:IsPreviousLocation(LOCATION_OVERLAY) and (tc:GetReason()&(REASON_COST|REASON_EFFECT))~=0 end,1,nil)
 end
 
 function s.tdfilter(c)

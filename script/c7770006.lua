@@ -93,7 +93,8 @@ end
 
 function s.sscon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsLocation(LOCATION_MZONE) and eg:IsExists(Card.IsControler,1,nil,c:GetControler())
+	return c:IsLocation(LOCATION_MZONE) and c:GetControler()~=c:GetOwner() and not eg:IsContains(c)
+		and eg:IsExists(function(tc,p) return tc:IsControler(p) and tc:GetSummonPlayer()==p end,1,nil,c:GetControler())
 end
 function s.ssop(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetHandler():GetControler()
@@ -107,8 +108,7 @@ end
 
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_OVERLAY)
-		and c:GetPreviousLocation()==LOCATION_OVERLAY and c:IsControler(c:GetOwner())
+	return c:IsPreviousLocation(LOCATION_OVERLAY) and (c:GetReason()&(REASON_COST|REASON_EFFECT))~=0
 end
 function s.thfilter(c)
 	return c:IsSetCard(SET_PURRFECT) and not c:IsCode(id) and c:IsAbleToHand()
