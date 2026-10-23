@@ -22,7 +22,7 @@ function s.initial_effect(c)
     e2:SetType(EFFECT_TYPE_IGNITION)
     e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e2:SetRange(LOCATION_GRAVE)
-    e2:SetCountLimit(1,id)
+    e2:SetCountLimit(1,id+100)
     e2:SetCondition(aux.exccon)
     e2:SetCost(aux.bfgcost)
     e2:SetTarget(s.sptg)
@@ -39,15 +39,20 @@ function s.has_assembly_area(tp)
     end, tp, LOCATION_FZONE, 0, 1, nil)
 end
 
--- Condition kích hoạt: Không có quái thú ở Main Monster Zone (hoặc được bypass bởi Field Spell)
-function s.condition(e,tp,eg,ep,ev,re,r,rp)
-    if s.has_assembly_area(tp) then return true end
-    return not Duel.IsExistingMatchingCard(Card.IsLocation,tp,LOCATION_MZONE,0,1,nil,LOCATION_MZONE)
+-- Filter kiểm tra quái ở Main Monster Zone (Sequence 0 đến 4)
+function s.mmzfilter(c)
+    return c:GetSequence()<5
 end
 
--- Lọc target trên sân
+-- Condition kích hoạt chuẩn: Chỉ kiểm tra Main Monster Zone (Sequence < 5)
+function s.condition(e,tp,eg,ep,ev,re,r,rp)
+    if s.has_assembly_area(tp) then return true end
+    return not Duel.IsExistingMatchingCard(s.mmzfilter,tp,LOCATION_MZONE,0,1,nil)
+end
+
+-- Lọc target Sky Striker Link trên sân
 function s.tgfilter(c,e,tp)
-    return c:IsFaceup() and c:IsSetCard(0x115) and c:IsType(TYPE_LINK)
+    return c:IsFaceup() and c:IsSetCard(0x115) and c:IsType(TYPE_LINK) and c:IsAbleToRemove()
         and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c)
 end
 
@@ -57,6 +62,7 @@ function s.spfilter(c,e,tp,tc)
         and not c:IsCode(tc:GetCode()) 
         and not c:IsAttribute(tc:GetAttribute())
         and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+        and Duel.GetLocationCountFromEx(tp,tp,tc,c)>0
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
