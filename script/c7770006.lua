@@ -1,6 +1,7 @@
--- Purrfect Maid - Minty Starlight
+-- c7770006: Purrfect Maid – Minty Starlight
 local s,id=GetID()
 local SET_PURRFECT=0x777
+
 function s.initial_effect(c)
 	-- Special Summon and attach 1 Purrfect card
 	local e1=Effect.CreateEffect(c)
@@ -27,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.ctop)
 	c:RegisterEffect(e2)
 
-	-- Material grant: Each time controller Special Summons, must send 1 card from hand/field to GY
+	-- Material grant: Khi ở sân đối thủ, mỗi khi đối thủ Special Summon quái thì bắt buộc gửi 1 lá từ TAY xuống Mộ
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -93,16 +94,20 @@ end
 
 function s.sscon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
+	-- Chỉ hoạt động khi quái Xyz ở sân ĐỐI THỦ (c:GetControler() ~= c:GetOwner()), không tính chính quái Xyz đó
 	return c:IsLocation(LOCATION_MZONE) and c:GetControler()~=c:GetOwner() and not eg:IsContains(c)
 		and eg:IsExists(function(tc,p) return tc:IsControler(p) and tc:GetSummonPlayer()==p end,1,nil,c:GetControler())
 end
 function s.ssop(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetHandler():GetControler()
-	Duel.Hint(HINT_CARD,0,id)
-	Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TOGRAVE)
-	local g=Duel.SelectMatchingCard(p,nil,p,LOCATION_HAND+LOCATION_ONFIELD,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoGrave(g,REASON_EFFECT)
+	-- Chỉ kiểm tra và bắt buộc gửi duy nhất từ TAY (LOCATION_HAND)
+	if Duel.GetFieldGroupCount(p,LOCATION_HAND,0)>0 then
+		Duel.Hint(HINT_CARD,0,id)
+		Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TOGRAVE)
+		local g=Duel.SelectMatchingCard(p,nil,p,LOCATION_HAND,0,1,1,nil)
+		if #g>0 then
+			Duel.SendtoGrave(g,REASON_EFFECT)
+		end
 	end
 end
 
@@ -114,14 +119,4 @@ function s.thfilter(c)
 	return c:IsSetCard(SET_PURRFECT) and not c:IsCode(id) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
-end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g)
-	end
-end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.
