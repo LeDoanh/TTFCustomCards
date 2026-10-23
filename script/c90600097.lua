@@ -1,7 +1,6 @@
 -- Æthel Nemesis Area - Void Zone
 -- ID: 90600097
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Khi kích hoạt: Add 1 Spell/Trap archetype từ Deck
     local e1=Effect.CreateEffect(c)

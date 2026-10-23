@@ -1,11 +1,10 @@
 -- Æthel Nemesis Commander - Iron Throne
 -- ID: 90600088
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Điều kiện Link Summon: 3+ quái thú, bao gồm 1 "Æthel-Nemesis" hoặc "Sky Striker"
     c:EnableReviveLimit()
-    Link.AddProcedure(c, aux.FilterBoolFunctionEqual(Card.IsType, TYPE_MONSTER), 3, 99, s.lcheck)
+    Link.AddProcedure(c, nil, 3, 99, s.lcheck)
 
     -- Hiệu ứng liên tục: Tăng 300 ATK cho mỗi Spell đang bị banish
     local e1=Effect.CreateEffect(c)

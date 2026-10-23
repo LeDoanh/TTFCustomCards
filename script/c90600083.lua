@@ -3,20 +3,34 @@
 local s,id=GetID()
 local SETCODE_AETHEL_NEMESIS = 0x115A
 
+--------------------------------------------------------------------------------
+-- ĐIỀU KIỆN TRIỆU HỒI & KHÁNG HIỆU ỨNG (Khai báo trước để tránh lỗi nil)
+--------------------------------------------------------------------------------
+function s.splimit(e,se,sp,st)
+	return (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK
+end
+
+function s.efilter(e,te)
+	return te:GetOwnerPlayer()~=e:GetHandlerPlayer() and te:IsActiveType(TYPE_MONSTER)
+end
+
+--------------------------------------------------------------------------------
+-- INITIAL EFFECT
+--------------------------------------------------------------------------------
 function s.initial_effect(c)
 	-- Nguyên liệu Link: 3+ "Æthel Nemesis" monsters
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,SETCODE_AETHEL_NEMESIS),3,6)
 
-	-- Bắt buộc phải được Link Summoned (Must be Link Summoned)
+	-- Bắt buộc phải được Link Summoned
 	local e0=Effect.CreateEffect(c)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(aux.linklimit)
+	e0:SetValue(s.splimit)
 	c:RegisterEffect(e0)
 
-	-- Kháng hiệu ứng quái thú của đối thủ (Unaffected by your opponent's monster effects)
+	-- Kháng hiệu ứng quái thú của đối thủ
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -53,13 +67,6 @@ function s.initial_effect(c)
 end
 
 s.listed_series={SETCODE_AETHEL_NEMESIS}
-
---------------------------------------------------------------------------------
--- KHIẾU KHÁNG
---------------------------------------------------------------------------------
-function s.efilter(e,te)
-	return te:GetOwnerPlayer()~=e:GetHandlerPlayer() and te:IsActiveType(TYPE_MONSTER)
-end
 
 --------------------------------------------------------------------------------
 -- HIỆU ỨNG 1: SEARCH CARD VÀ SEND CARD CỦA ĐỐI THỦ XUỐNG GY

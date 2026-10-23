@@ -68,3 +68,23 @@ end
 --------------------------------------------------------------------------------
 function s.actcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsReason(REASON_EFFECT)
+end
+
+function s.fieldfilter(c,tp)
+	return c:IsSetCard(SETCODE_AETHEL_NEMESIS) and c:IsType(TYPE_FIELD)
+		and (c:IsType(TYPE_SPELL) or c:IsType(TYPE_TRAP))
+		and c:GetActivateEffect():IsActivatable(tp,true,true)
+end
+
+function s.acttg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.fieldfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,tp) end
+end
+
+function s.actop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.fieldfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,tp)
+	local tc=g:GetFirst()
+	if tc then
+		Duel.ActivateFieldSpell(tc,e,tp,eg,ep,ev,re,r,rp)
+	end
+end

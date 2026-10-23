@@ -1,18 +1,17 @@
 -- Æthel Nemesis Dominator - Lockdown
 -- ID: 90600093
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Điều kiện Link Summon: 3+ quái thú "Æthel Nemesis"
     c:EnableReviveLimit()
-    Link.AddProcedure(c, aux.FilterBoolFunctionEqual(Card.IsSetCard, 0x115a), 3, 99)
+    Link.AddProcedure(c, aux.FilterBoolFunctionEx(Card.IsSetCard, 0x115a), 3, 99)
 
     -- Must first be Link Summoned
     local e0=Effect.CreateEffect(c)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(aux.linklimit)
+    e0:SetValue(s.splimit)
     c:RegisterEffect(e0)
 
     -- Hiệu ứng Quick Effect 1: Negate card/effect của đối thủ & banish lá đó
@@ -46,6 +45,11 @@ end
 
 -- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
 s.listed_series={0x115a, 0x115}
+
+-- Điều kiện triệu hồi độc quyền bằng Link Summon
+function s.splimit(e,se,sp,st)
+    return (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK
+end
 
 -- Filter & Xử lý Omni-Negate
 function s.negcostfilter(c)

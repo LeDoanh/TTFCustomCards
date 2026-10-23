@@ -3,6 +3,20 @@
 local s,id=GetID()
 local SETCODE_AETHEL_NEMESIS = 0x115A
 
+--------------------------------------------------------------------------------
+-- ĐIỀU KIỆN TRIỆU HỒI & KHÁNG HIỆU ỨNG (Định nghĩa trước để tránh lỗi nil)
+--------------------------------------------------------------------------------
+function s.splimit(e,se,sp,st)
+	return (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK
+end
+
+function s.efilter(e,te)
+	return te:GetOwner()~=e:GetHandler()
+end
+
+--------------------------------------------------------------------------------
+-- INITIAL EFFECT
+--------------------------------------------------------------------------------
 function s.initial_effect(c)
 	-- Nguyên liệu Link: 4+ "Æthel Nemesis" monsters
 	c:EnableReviveLimit()
@@ -13,7 +27,7 @@ function s.initial_effect(c)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(aux.linklimit)
+	e0:SetValue(s.splimit)
 	c:RegisterEffect(e0)
 
 	-- Kháng tất cả hiệu ứng lá bài khác (Unaffected by other cards' effects)
@@ -55,13 +69,6 @@ function s.initial_effect(c)
 end
 
 s.listed_series={SETCODE_AETHEL_NEMESIS}
-
---------------------------------------------------------------------------------
--- KHIẾU KHÁNG TOÀN BỘ
---------------------------------------------------------------------------------
-function s.efilter(e,te)
-	return te:GetOwner()~=e:GetHandler()
-end
 
 --------------------------------------------------------------------------------
 -- HIỆU ỨNG QUICK EFFECT: BANISH TAY ĐỐI THỦ + ÉP ĐỐI THỦ BANISH 2 LÁ

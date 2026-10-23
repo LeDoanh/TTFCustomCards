@@ -1,7 +1,6 @@
 -- Æthel Nemesis Network - Gatekeeper
 -- ID: 90600087
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Điều kiện Link Summon: 2 quái thú, bao gồm 1 "Æthel-Nemesis" hoặc "Sky Striker"
     c:EnableReviveLimit()

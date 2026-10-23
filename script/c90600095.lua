@@ -1,7 +1,6 @@
 -- Æthel Nemesis Cyber - Recharge
 -- ID: 90600095
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Kích hoạt On-Field: Banish bài trên tay & Draw
     local e1=Effect.CreateEffect(c)
@@ -38,7 +37,7 @@ s.listed_series={0x115a, 0x115}
 
 -- Condition: Kích hoạt từ tay trong lượt đối thủ
 function s.handcon(e)
-    return Duel.IsExistingMatchingCard(aux.FilterFaceupFunction(Card.IsSetCard,0x115a),e:GetHandlerPlayer(),LOCATION_MZONE,0,1,nil)
+    return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x115a),e:GetHandlerPlayer(),LOCATION_MZONE,0,1,nil)
 end
 
 -- Target & Activate H1: Banish hand & Draw

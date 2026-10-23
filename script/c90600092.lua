@@ -1,18 +1,17 @@
 -- Æthel Nemesis Ignis - Vermilion
 -- ID: 90600092
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Điều kiện Link Summon: 2 monsters, bao gồm 1 "Æthel-Nemesis" hoặc "Sky Striker" monster
     c:EnableReviveLimit()
-    Link.AddProcedure(c, aux.FilterBoolFunctionEqual(Card.IsType, TYPE_MONSTER), 2, 2, s.lcheck)
+    Link.AddProcedure(c, nil, 2, 2, s.lcheck)
 
     -- Must first be Link Summoned
     local e0=Effect.CreateEffect(c)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(aux.linklimit)
+    e0:SetValue(s.splimit)
     c:RegisterEffect(e0)
 
     -- Hiệu ứng 1: Khi Link Summoned -> Banish 1 Spell archetype từ GY, search 1 quái thú DARK Level 4 hoặc thấp hơn từ Deck
@@ -44,6 +43,11 @@ end
 
 -- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
 s.listed_series={0x115a, 0x115}
+
+-- Điều kiện triệu hồi
+function s.splimit(e,se,sp,st)
+    return (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK
+end
 
 -- Kiểm tra nguyên liệu Link
 function s.lcheck(g,lc,sumtype,tp)

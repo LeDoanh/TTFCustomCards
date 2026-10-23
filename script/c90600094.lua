@@ -1,7 +1,6 @@
 -- Æthel Nemesis Assimilation - System Purge
 -- ID: 90600094
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Kích hoạt: Banish 1 lá "Æthel-Nemesis" từ Deck, sau đó rút 1 lá nếu có >= 3 Spells bị banish
     local e1=Effect.CreateEffect(c)

@@ -1,18 +1,17 @@
 -- Æthel Nemesis Sovereign - Abyssal Emperor
 -- ID: 90600089
 local s,id=GetID()
-local SETCODE_AETHEL_NEMESIS = 0x115A
 function s.initial_effect(c)
     -- Điều kiện Link Summon: 2+ quái thú, bao gồm 1 "Æthel Nemesis" hoặc "Sky Striker"
     c:EnableReviveLimit()
-    Link.AddProcedure(c, aux.FilterBoolFunctionEqual(Card.IsType, TYPE_MONSTER), 2, 99, s.lcheck)
+    Link.AddProcedure(c, nil, 2, 99, s.lcheck)
 
     -- Must be Link Summoned
     local e0=Effect.CreateEffect(c)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(aux.linklimit)
+    e0:SetValue(s.splimit)
     c:RegisterEffect(e0)
 
     -- Hiệu ứng 1: Khi Special Summon -> banish 1 "Æthel Nemesis" Spell từ Deck/GY, gửi 1 lá của đối thủ vào GY
@@ -44,6 +43,11 @@ end
 
 -- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
 s.listed_series={0x115a, 0x115}
+
+-- Điều kiện triệu hồi độc quyền từ Extra Deck bằng Link Summon
+function s.splimit(e,se,sp,st)
+    return (st&SUMMON_TYPE_LINK)==SUMMON_TYPE_LINK
+end
 
 -- Kiểm tra nguyên liệu Link
 function s.lcheck(g,lc,sumtype,tp)
