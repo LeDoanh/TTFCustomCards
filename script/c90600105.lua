@@ -2,6 +2,7 @@
 -- ID: 90600105
 local s,id=GetID()
 local SETCODE_AETHEL_NEMESIS = 0x115A
+local SET_SKY_STRIKER        = 0x115
 
 function s.initial_effect(c)
 	-- Hiệu ứng 1: Gửi lá bài này từ tay xuống GY, sau đó banish 1 "Æthel-Nemesis" card từ tay
@@ -68,13 +69,12 @@ function s.lkcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():GetTurnID()~=Duel.GetTurnCount()
 end
 
-function s.matfilter(c,lc,tp)
+function s.matfilter(c,tp)
 	if c:IsLocation(LOCATION_MZONE) then
-		return c:IsCanBeLinkMaterial(lc,tp)
+		return c:IsFaceup() and c:IsCanBeLinkMaterial(nil,tp)
 	elseif c:IsLocation(LOCATION_REMOVED) then
 		return c:IsFaceup() and c:IsMonster() 
 			and (c:IsSetCard(SETCODE_AETHEL_NEMESIS) or c:IsSetCard(SET_SKY_STRIKER))
-			and c:IsCanBeLinkMaterial(lc,tp)
 	end
 	return false
 end
@@ -86,18 +86,20 @@ end
 
 function s.lktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil,nil,tp)
+		local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil,tp)
 		return Duel.IsExistingMatchingCard(s.lkfilter,tp,LOCATION_EXTRA,0,1,nil,tp,mg)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 
 function s.lkop(e,tp,eg,ep,ev,re,r,rp)
-	local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil,nil,tp)
+	local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil,tp)
 	local g=Duel.GetMatchingGroup(s.lkfilter,tp,LOCATION_EXTRA,0,nil,tp,mg)
 	if #g>0 then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local lc=g:Select(tp,1,1,nil):GetFirst()
-		Duel.LinkSummon(tp,lc,nil,mg)
+		if lc then
+			Duel.LinkSummon(tp,lc,nil,mg)
+		end
 	end
 end
