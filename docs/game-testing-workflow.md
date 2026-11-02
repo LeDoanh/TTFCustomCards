@@ -4,9 +4,10 @@ Kiểm tra tĩnh (`manage_harness.py verify`) chỉ xác nhận dữ liệu, cú
 
 ## 1. Đưa nhánh vào game
 
-Mọi người push card lên nhánh của mình rồi test đúng nhánh đó trong game; không chép file vào thư mục game.
+Mọi người push card lên nhánh của mình rồi test đúng nhánh đó trong game; không chép file vào thư mục game.  
+*Dành riêng cho Game Tester:* Bạn **KHÔNG CẦN** cài đặt Git, Python hay VSCode. Chỉ cần cài EDOPro và sử dụng công cụ click chuột `pin_game_branch.cmd`.
 
-1. Commit và push nhánh (`docs/dev-workflow.md` §3). `cdb/card-data.cdb` đã compile khớp JSON và artwork phải nằm trong commit, vì game chỉ thấy những gì đã push.
+1. Commit và push nhánh (`docs/dev-workflow.md` §3). File database (file CDB riêng của engine hoặc `cdb/card-data.cdb` đã compile) và artwork phải nằm trong commit, vì game chỉ thấy những gì đã push.
 2. Chọn nhánh bằng tool pin: bấm đúp `tools/pin_game_branch.cmd` (trong workspace; tester dùng bản trong `repositories/ttf-custom-cards/tools` của game), bấm `1` rồi chọn nhánh trong danh sách. Menu và tham số xem `docs/dev-workflow.md` §4.2 và §4.6.
 3. Đóng hẳn EDOPro rồi mở lại: game tự kéo đầu nhánh vừa chọn. Push thêm commit thì chỉ cần mở lại game.
 4. Test xong chọn `2` trong menu để về bản người chơi.
