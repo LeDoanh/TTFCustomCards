@@ -12,13 +12,19 @@ Dành cho dev làm card trên repo này. Quy tắc nhánh, phân bổ engine và
 
 ## 2. Làm việc trên nhánh engine của bạn
 
+> **NGUYÊN TẮC: 1 NHÁNH = 1 ARCHETYPE (HOẶC 1 DEV)**  
+> Mỗi dev tạo duy nhất 1 nhánh làm việc xuyên suốt (`engine/<Engine>` hoặc `dev/<Dev>`). Toàn bộ việc tạo card mới, fix bug, sửa effect, cập nhật CDB/ảnh và test duel đều làm trên chính nhánh này. Không tạo nhánh lẻ tẻ!
+
 1. **Lấy bản mới nhất.** Nhấn **Current Branch** -> chọn `develop`. Nhấn nút **Fetch origin** ở thanh trên; nếu nút đổi thành **Pull origin** thì nhấn tiếp.
 2. **Vào nhánh engine của bạn.** Lần đầu: **Current Branch** -> **New Branch** -> Name `engine/<Engine>` (ví dụ `engine/Labrynth`) -> mục **Create branch based on...** chọn `develop`, không chọn `master` -> **Create Branch**. Các lần sau chỉ cần **Current Branch** -> chọn `engine/<Engine>`.
 3. **Tạo card, chạy `verify`** bằng terminal mở từ **Repository -> Open in Command Prompt**, theo `docs/agent-workflow.md`.
 4. **Commit.** Trở lại GitHub Desktop, tab **Changes**:
-   - Chỉ tick file của đợt card này: `card-data/c<ID>.json`, `script/c<ID>.lua`, `pics/<ID>.jpg`, `cdb/card-data.cdb` và `feature_list.json`. Bỏ tick mọi file khác.
+   - Chỉ tick file của đợt card này:
+     * *Nếu dùng CDB riêng:* `script/c<ID>.lua`, `pics/<ID>.jpg`, `cdb/<Tên_Engine>.cdb`.
+     * *Nếu dùng JSON specs:* `card-data/c<ID>.json`, `script/c<ID>.lua`, `pics/<ID>.jpg`, `cdb/card-data.cdb` và `feature_list.json`.
+     * Bỏ tick mọi file khác không liên quan.
    - Ô **Summary** theo định dạng `[Tên bạn] [Feature]: <English description>` (hoặc `[Fix]`), rồi **Commit to engine/...**.
-5. **Push.** Nhấn **Publish branch** (lần đầu) hoặc **Push origin** (các lần sau). Game chỉ thấy file đã commit và push, nên không bỏ sót `cdb/card-data.cdb` và artwork.
+5. **Push.** Nhấn **Publish branch** (lần đầu) hoặc **Push origin** (các lần sau). Game chỉ thấy file đã commit và push, nên không bỏ sót file CDB và artwork.
 6. **Test trong game.** Bấm đúp `tools/pin_game_branch.cmd` trong workspace để mở menu (bấm 1 rồi bấm số của nhánh; lần đầu, nếu script chưa biết thư mục game, nó sẽ hỏi đường dẫn). Hoặc ghim thẳng từ terminal ở workspace:
 
 ```powershell
