@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-24",
+  "last_updated": "2026-11-02",
   "note": "Trạng thái: pending(p) | working(w) | review(r) | done(d) | skipped(x). Phản ánh prefix trong docs/queues/<archetype>/",
   "archetypes": {
     "Blue_Eye": {
@@ -1334,14 +1334,7 @@
     "Sky_Striker": {
       "setcode": "0x115",
       "passcode_range": "90600001-90699999",
-      "cards": [
-        {
-          "name": "Sky Striker Special Maneuver - The Chosen One",
-          "passcode": "90600041",
-          "status": "done",
-          "script": "script/c90600041.lua"
-        }
-      ]
+      "cards": []
     }
   }
 }
