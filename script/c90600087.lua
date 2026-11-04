@@ -83,7 +83,7 @@ function s.linkop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 then
         if c:IsRelateToEffect(e) and c:IsFaceup() then
-            -- Cho phép lá bài này làm toàn bộ nguyên liệu Link Summon cho 1 quái thú Æthel-Nemesis trong lượt này
+            -- Cho phép lá bài này dùng một mình nó để thay thế toàn bộ số nguyên liệu Link cần thiết
             local e1=Effect.CreateEffect(c)
             e1:SetType(EFFECT_TYPE_SINGLE)
             e1:SetCode(EFFECT_LINK_MATERIAL_COUNT)
@@ -94,9 +94,13 @@ function s.linkop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
+-- Hàm tính toán số lượng nguyên liệu quy đổi: Cho phép trả về giá trị Link của con quái mục tiêu hoặc tối đa theo yêu cầu
 function s.matval(e,lc)
+    -- Trả về trực tiếp chỉ số Link của quái thú Link chuẩn bị triệu hồi (lc:GetLink()) 
+    -- giúp nó một mình đáp ứng đủ từ Link-3 lên đến Link-8 miễn là quái đích thuộc archetype Æthel-Nemesis.
     if lc:IsSetCard(0x115a) then
         return lc:GetLink()
     end
-    return 0
+    return 1
 end
