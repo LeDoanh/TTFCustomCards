@@ -2,9 +2,9 @@
 -- ID: 90600087
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Điều kiện Link Summon: 2 quái thú, bao gồm 1 "Æthel-Nemesis" hoặc "Sky Striker"
+    -- Điều kiện Link Summon: 2 quái thú, bao gồm ít nhất 1 "Æthel-Nemesis" hoặc "Sky Striker"
     c:EnableReviveLimit()
-    Link.AddProcedure(c, s.matfilter, 1, 1, s.lcheck)
+    Link.AddProcedure(c, s.matfilter, 2, 2, s.lcheck)
     
     -- Hiệu ứng 1: Khi Special Summon -> Banish 1 quái thú Æthel-Nemesis hoặc Sky Striker từ Deck
     local e1=Effect.CreateEffect(c)
@@ -37,12 +37,14 @@ end
 -- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
 s.listed_series={0x115a, 0x115}
 
+-- Bộ lọc nguyên liệu từng con: phải thuộc archetype Æthel-Nemesis hoặc Sky Striker
 function s.matfilter(c,lc,sumtype,tp)
     return c:IsSetCard(0x115a,lc,sumtype,tp) or c:IsSetCard(0x115,lc,sumtype,tp)
 end
 
+-- Kiểm tra tổng nhóm nguyên liệu (Ít nhất 1 con phải thuộc archetype)
 function s.lcheck(g,lc,sumtype,tp)
-    return g:GetCount()==2
+    return g:IsExists(s.matfilter,1,nil,lc,sumtype,tp)
 end
 
 --------------------------------------------------------------------------------
