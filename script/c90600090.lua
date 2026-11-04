@@ -81,9 +81,9 @@ function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     return rp~=tp and Duel.IsChainDisablable(ev)
 end
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.negcostfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GY,0,1,nil) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.negcostfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local g=Duel.SelectMatchingCard(tp,s.negcostfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GY,0,1,1,nil)
+    local g=Duel.SelectMatchingCard(tp,s.negcostfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
     Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)

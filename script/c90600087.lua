@@ -45,7 +45,9 @@ function s.lcheck(g,lc,sumtype,tp)
     return g:GetCount()==2
 end
 
--- Filter & xử lý Hiệu ứng 1
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 1: BANISH 1 QUÁI THÚ TỪ DECK KHI ĐƯỢC SPECIAL SUMMON
+--------------------------------------------------------------------------------
 function s.rmfilter(c)
     return c:IsMonster() and (c:IsSetCard(0x115a) or c:IsSetCard(0x115)) and c:IsAbleToRemove()
 end
@@ -61,15 +63,17 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Filter & xử lý Hiệu ứng 2
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 2: BANISH CARD TỪ GY ĐỐI THỦ & TỰ TĂNG COUNT LÀM NGUYÊN LIỆU LINK
+--------------------------------------------------------------------------------
 function s.linkcond(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsMainPhase() and Duel.GetTurnPlayer()~=tp
 end
 function s.linktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsLocation(LOCATION_GY) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
-    if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_GY,1,nil) end
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
+    if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_GRAVE,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_GY,1,1,nil)
+    local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_GRAVE,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
 function s.linkop(e,tp,eg,ep,ev,re,r,rp)
