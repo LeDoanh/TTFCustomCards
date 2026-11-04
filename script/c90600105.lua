@@ -69,14 +69,9 @@ function s.lkcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():GetTurnID()~=Duel.GetTurnCount()
 end
 
-function s.matfilter(c,tp)
-	if c:IsLocation(LOCATION_MZONE) then
-		return c:IsFaceup() and c:IsCanBeLinkMaterial(nil,tp)
-	elseif c:IsLocation(LOCATION_REMOVED) then
-		return c:IsFaceup() and c:IsMonster() 
-			and (c:IsSetCard(SETCODE_AETHEL_NEMESIS) or c:IsSetCard(SET_SKY_STRIKER))
-	end
-	return false
+function s.matfilter(c)
+	return c:IsFaceup() and c:IsMonster() and not c:IsType(TYPE_TOKEN)
+		and (c:IsLocation(LOCATION_MZONE) or (c:IsLocation(LOCATION_REMOVED) and (c:IsSetCard(SETCODE_AETHEL_NEMESIS) or c:IsSetCard(SET_SKY_STRIKER))))
 end
 
 function s.lkfilter(c,tp,mg)
@@ -86,14 +81,14 @@ end
 
 function s.lktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil,tp)
+		local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil)
 		return Duel.IsExistingMatchingCard(s.lkfilter,tp,LOCATION_EXTRA,0,1,nil,tp,mg)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 
 function s.lkop(e,tp,eg,ep,ev,re,r,rp)
-	local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil,tp)
+	local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_REMOVED,0,nil)
 	local g=Duel.GetMatchingGroup(s.lkfilter,tp,LOCATION_EXTRA,0,nil,tp,mg)
 	if #g>0 then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
