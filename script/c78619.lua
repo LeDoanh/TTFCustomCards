@@ -10,9 +10,9 @@ function s.initial_effect(c)
 	-- Burn 400 and gain 400 each time a card is attached
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e2:SetCode(EVENT_OVERLAY)
+	e2:SetCode(EVENT_ATTACH_MATERIAL)
 	e2:SetRange(LOCATION_SZONE)
-	e2:SetOperation(function(e,tp) Duel.Damage(1-tp,400,REASON_EFFECT) Duel.Recover(tp,400,REASON_EFFECT) end)
+	e2:SetOperation(s.damop)
 	c:RegisterEffect(e2)
 
 	-- Detach 1, look at random hand card, discard if Spell/Trap
@@ -50,6 +50,11 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 s.listed_series={0x786}
+
+function s.damop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Damage(1-tp,400,REASON_EFFECT)
+	Duel.Recover(tp,400,REASON_EFFECT)
+end
 
 function s.xyzfilter(c,tp)
 	return c:IsFaceup() and c:IsType(TYPE_XYZ) and c:CheckRemoveOverlayCard(tp,1,REASON_EFFECT)
