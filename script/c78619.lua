@@ -7,11 +7,12 @@ function s.initial_effect(c)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e1)
 
-	-- Burn 400 and gain 400 each time a card is attached
+	-- Burn 400 and gain 400 each time a card is attached to an Xyz Monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e2:SetCode(EVENT_ATTACH_MATERIAL)
+	e2:SetCode(EVENT_MOVE)
 	e2:SetRange(LOCATION_SZONE)
+	e2:SetCondition(s.damcon)
 	e2:SetOperation(s.damop)
 	c:RegisterEffect(e2)
 
@@ -51,7 +52,14 @@ function s.initial_effect(c)
 end
 s.listed_series={0x786}
 
+function s.cfilter(c)
+	return c:IsLocation(LOCATION_OVERLAY)
+end
+function s.damcon(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(s.cfilter,1,nil)
+end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_CARD,0,id)
 	Duel.Damage(1-tp,400,REASON_EFFECT)
 	Duel.Recover(tp,400,REASON_EFFECT)
 end
