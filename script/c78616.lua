@@ -37,7 +37,7 @@ function s.initial_effect(c)
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_XMATERIAL)
 	e3:SetCode(EFFECT_CHANGE_BATTLE_DAMAGE)
-	e3:SetValue(aux.damval_2)
+	e3:SetValue(s.damval)
 	c:RegisterEffect(e3)
 
 	-- Detach Effect: Add or activate Field Spell
@@ -86,6 +86,10 @@ function s.attop(e,tp,eg,ep,ev,re,r,rp)
 			Duel.Overlay(tc,g)
 		end
 	end
+end
+
+function s.damval(e,val)
+	return val*2
 end
 
 function s.fscon(e,tp,eg,ep,ev,re,r,rp)
