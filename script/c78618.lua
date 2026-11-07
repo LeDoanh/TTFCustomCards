@@ -19,14 +19,11 @@ function s.initial_effect(c)
 	e2:SetCondition(function(e) return Duel.IsExistingMatchingCard(function(c,tp) return c:IsType(TYPE_XYZ) and c:GetOwner()==tp end,e:GetHandlerPlayer(),0,LOCATION_MZONE,1,nil,e:GetHandlerPlayer()) end)
 	c:RegisterEffect(e2)
 
-	-- Material Effect: Opponent pays 500 LP to activate cards/effects
+	-- Material Effect: Opponent pays 500 LP each time they activate a card or effect
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_XMATERIAL)
-	e3:SetCode(EFFECT_ACTIVATION_COST)
-	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e3:SetTargetRange(0,1)
-	e3:SetCost(function(e,te,tp) return Duel.CheckLPCost(tp,500) end)
-	e3:SetOperation(function(e,tp,eg,ep,ev,re,r,rp) Duel.PayLPCost(tp,500) end)
+	e3:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_CHAINING)
+	e3:SetOperation(s.lpop)
 	c:RegisterEffect(e3)
 
 	-- Detach Effect: Set this card from GY, banish it when leaves
@@ -77,6 +74,12 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 		local sg=g:Select(tp,count,count,nil)
 		Duel.Destroy(sg,REASON_EFFECT)
+	end
+end
+
+function s.lpop(e,tp,eg,ep,ev,re,r,rp)
+	if rp==1-tp then
+		Duel.PayLPCost(1-tp,500)
 	end
 end
 
