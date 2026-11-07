@@ -32,7 +32,7 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.negcon)
-	e2:SetCost(aux.dxmcost(2))
+	e2:SetCost(s.cost2)
 	e2:SetTarget(s.negtg)
 	e2:SetOperation(s.negop)
 	c:RegisterEffect(e2,false,REGISTER_FLAG_DETACH_XMAT)
@@ -62,6 +62,11 @@ end
 
 function s.matcon(e)
 	return e:GetHandler():GetOverlayCount()>=8
+end
+
+function s.cost2(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,2,REASON_COST) end
+	e:GetHandler():RemoveOverlayCard(tp,2,2,REASON_COST)
 end
 
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
