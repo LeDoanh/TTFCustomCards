@@ -64,7 +64,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.NegateActivation(ev) and ec:IsRelateToEffect(re) then
 		ec:CancelToGrave()
 		if Duel.SendtoDeck(ec,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 and ec:IsLocation(LOCATION_DECK+LOCATION_EXTRA) then
-			if not c:IsRelateToEffect(e) or not c:IsCanOverlay() then return end
+			if not c:IsRelateToEffect(e) then return end
 			local xyzg=Duel.GetMatchingGroup(function(card) return card:IsFaceup() and card:IsType(TYPE_XYZ) end,tp,LOCATION_MZONE,0,nil)
 			if #xyzg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
 				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
