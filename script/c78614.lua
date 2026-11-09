@@ -46,7 +46,7 @@ function s.thfilter(c)
 	return c:IsLevel(2) and c:IsRace(RACE_SPELLCASTER) and c:IsAbleToHand()
 end
 function s.atfilter(c)
-	return (c:IsSetCard(0x786) or c:IsSetCard(0x777)) and c:IsCanOverlay()
+	return (c:IsSetCard(0x786) or c:IsSetCard(0x777))
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.xyzfilter(chkc,tp) end
