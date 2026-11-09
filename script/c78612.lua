@@ -72,7 +72,7 @@ end
 
 function s.atttg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local bc=e:GetHandler():GetBattleTarget()
-	if chk==0 then return e:GetHandler():IsRelateToBattle() and bc:IsCanOverlay() end
+	if chk==0 then return e:GetHandler():IsRelateToBattle() and not bc:IsType(TYPE_TOKEN) end
 	Duel.SetTargetCard(bc)
 end
 function s.attop(e,tp,eg,ep,ev,re,r,rp)
