@@ -1,6 +1,9 @@
 -- Æthel Nemesis Commander - Iron Throne
 -- ID: 90600088
 local s,id=GetID()
+local SETCODE_AETHEL_NEMESIS = 0x115A
+local SET_SKY_STRIKER        = 0x115
+
 function s.initial_effect(c)
     -- Điều kiện Link Summon: 3+ quái thú, bao gồm 1 "Æthel-Nemesis" hoặc "Sky Striker"
     c:EnableReviveLimit()
@@ -29,15 +32,15 @@ function s.initial_effect(c)
     e2:SetOperation(s.negop)
     c:RegisterEffect(e2)
 
-    -- Hiệu ứng Quick Effect 2: Link Summon ngay trong Main Phase
+    -- Hiệu ứng Quick Effect 2: Link Summon trong Main Phase của cả 2 người chơi
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
-    e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_REMOVE)
+    e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
     e3:SetType(EFFECT_TYPE_QUICK_O)
     e3:SetCode(EVENT_FREE_CHAIN)
     e3:SetRange(LOCATION_MZONE)
     e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-    e3:SetCountLimit(1,id+100)
+    e3:SetCountLimit(1,{id,1})
     e3:SetCondition(s.lkcon)
     e3:SetCost(s.lkcost)
     e3:SetTarget(s.lktg)
@@ -45,65 +48,73 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
-s.listed_series={0x115a, 0x115}
+s.listed_series={SETCODE_AETHEL_NEMESIS,SET_SKY_STRIKER}
 
--- Kiểm tra nguyên liệu Link
+--------------------------------------------------------------------------------
+-- KIỂM TRA NGUYÊN LIỆU LINK BAN ĐẦU
+--------------------------------------------------------------------------------
 function s.lcheck(g,lc,sumtype,tp)
     return g:IsExists(s.matfilter,1,nil,lc,sumtype,tp)
 end
 function s.matfilter(c,lc,sumtype,tp)
-    return c:IsSetCard(0x115a,lc,sumtype,tp) or c:IsSetCard(0x115,lc,sumtype,tp)
+    return c:IsSetCard(SETCODE_AETHEL_NEMESIS,lc,sumtype,tp) or c:IsSetCard(SET_SKY_STRIKER,lc,sumtype,tp)
 end
 
--- Tăng ATK dựa trên số Spell bị banish
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG TĂNG ATK
+--------------------------------------------------------------------------------
 function s.atkval(e,c)
     return Duel.GetMatchingGroupCount(Card.IsSpell,c:GetControler(),LOCATION_REMOVED,0,nil)*300
 end
 
--- Filter Spell archetype để banish làm cost
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 1: NEGATE MONSTER EFFECT
+--------------------------------------------------------------------------------
 function s.costfilter1(c)
-    return (c:IsSetCard(0x115a) or c:IsSetCard(0x115)) and c:IsSpell() and c:IsAbleToRemoveAsCost()
+    return (c:IsSetCard(SETCODE_AETHEL_NEMESIS) or c:IsSetCard(SET_SKY_STRIKER)) and c:IsSpell() and c:IsAbleToRemoveAsCost()
 end
 
--- Xử lý Negate Monster Effect
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     return rp~=tp and re:IsActiveType(TYPE_MONSTER) and Duel.IsChainDisablable(ev)
 end
+
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter1,tp,LOCATION_HAND+LOCATION_GY,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
     local g=Duel.SelectMatchingCard(tp,s.costfilter1,tp,LOCATION_HAND+LOCATION_GY,0,1,1,nil)
     Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
+
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
     Duel.SetOperationInfo(0,CATEGORY_DISABLE,eg,1,0,0)
 end
+
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     Duel.NegateActivation(ev)
 end
 
--- Filter Spell archetype ở GY cho Hiệu ứng Link Summon
-function s.costfilter2(c)
-    return (c:IsSetCard(0x115a) or c:IsSetCard(0x115)) and c:IsSpell() and c:IsAbleToRemoveAsCost()
-end
-
--- Filter quái Link Æthel-Nemesis để Link Summon
-function s.lkfilter(c,mg)
-    return c:IsSetCard(0x115a) and c:IsType(TYPE_LINK) and c:IsLinkSummonable(nil,mg)
-end
-
--- Xử lý Link Summon trong Main Phase
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 2: LINK SUMMON TRONG MAIN PHASE CẢ 2 LƯỢT (COST: BANISH SPELL TỪ GY)
+--------------------------------------------------------------------------------
+-- Chỉ cần đang ở Main Phase của bất kỳ người chơi nào
 function s.lkcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsMainPhase()
 end
+
+-- Chi phí: Banish 1 lá "Æthel-Nemesis" hoặc "Sky Striker" Spell từ Mộ (GY)
 function s.lkcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter2,tp,LOCATION_GY,0,1,nil) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter1,tp,LOCATION_GY,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local g=Duel.SelectMatchingCard(tp,s.costfilter2,tp,LOCATION_GY,0,1,1,nil)
+    local g=Duel.SelectMatchingCard(tp,s.costfilter1,tp,LOCATION_GY,0,1,1,nil)
     Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
+
+-- Lọc quái thú Link "Æthel-Nemesis" có thể triệu hồi được bằng nguyên liệu trên sân
+function s.lkfilter(c,mg)
+    return c:IsSetCard(SETCODE_AETHEL_NEMESIS) and c:IsType(TYPE_LINK) and c:IsLinkSummonable(nil,mg)
+end
+
 function s.lktg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         local mg=Duel.GetMatchingGroup(Card.IsCanBeLinkMaterial,tp,LOCATION_MZONE,0,nil)
@@ -111,6 +122,7 @@ function s.lktg(e,tp,eg,ep,ev,re,r,rp,chk)
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
+
 function s.lkop(e,tp,eg,ep,ev,re,r,rp)
     local mg=Duel.GetMatchingGroup(Card.IsCanBeLinkMaterial,tp,LOCATION_MZONE,0,nil)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)

@@ -1,6 +1,8 @@
 -- Sky Striker Special Maneuver - Signal Flare
 -- ID: 90600057
 local s,id=GetID()
+local SET_SKY_STRIKER = 0x115
+
 function s.initial_effect(c)
 	-- Kích hoạt lá bài Spell
 	local e1=Effect.CreateEffect(c)
@@ -32,8 +34,9 @@ function s.spfilter(c,e,tp)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE,1-tp)
 end
 
-function s.basicfilter(c)
+function s.basicfilter(c,e,tp)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsLevel(4)
+		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE,1-tp)
 end
 
 function s.thfilter(c)
@@ -45,8 +48,9 @@ end
 --------------------------------------------------------------------------------
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		if Duel.GetLocationCount(1-tp,LOCATION_MZONE)<2 then return false end
-		return Duel.IsExistingMatchingCard(s.basicfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,2,nil)
+		-- Kiểm tra sân đối thủ (1-tp) phải có ít nhất 2 ô trống ở Main Monster Zone
+		return Duel.GetLocationCount(1-tp,LOCATION_MZONE)>=2
+			and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.basicfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,2,nil,e,tp)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_DECK+LOCATION_GRAVE)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
