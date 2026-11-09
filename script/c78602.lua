@@ -46,7 +46,7 @@ function s.initial_effect(c)
 	e4:SetCode(EFFECT_UPDATE_ATTACK)
 	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e4:SetRange(LOCATION_MZONE)
-	e4:SetValue(s.atkval)
+	e4:SetValue(function(e,card) return card:GetOverlayCount()*400 end)
 	c:RegisterEffect(e4)
 	local e4b=e4:Clone()
 	e4b:SetCode(EFFECT_UPDATE_DEFENSE)
@@ -80,9 +80,7 @@ end
 function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DEATTACHFROM)
 	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil,tp)
-	if #g>0 then
-		g:GetFirst():RemoveOverlayCard(tp,1,1,REASON_COST)
-	end
+	if #g>0 then g:GetFirst():RemoveOverlayCard(tp,1,1,REASON_COST) end
 end
 
 function s.thfilter(c)
@@ -101,12 +99,14 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+function s.xyzfilter(c)
+	return c:IsFaceup() and c:IsType(TYPE_XYZ)
+end
 function s.attg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() and chkc:IsType(TYPE_XYZ) end
-	if chk==0 then return Duel.IsExistingTarget(function(c) return c:IsFaceup() and c:IsType(TYPE_XYZ) end,tp,LOCATION_MZONE,0,1,nil)
-		and e:GetHandler():IsCanOverlay() end
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.xyzfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.xyzfilter,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	Duel.SelectTarget(tp,function(c) return c:IsFaceup() and c:IsType(TYPE_XYZ) end,tp,LOCATION_MZONE,0,1,1,nil)
+	Duel.SelectTarget(tp,s.xyzfilter,tp,LOCATION_MZONE,0,1,1,nil)
 end
 function s.atop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
@@ -115,10 +115,6 @@ function s.atop(e,tp,eg,ep,ev,re,r,rp)
 		c:CancelToGrave()
 		Duel.Overlay(tc,c)
 	end
-end
-
-function s.atkval(e,c)
-	return c:GetOverlayCount()*400
 end
 
 function s.thcon2(e,tp,eg,ep,ev,re,r,rp)
@@ -137,7 +133,5 @@ function s.thtg2(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.thop2(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		Duel.SendtoHand(tc,nil,REASON_EFFECT)
-	end
+	if tc:IsRelateToEffect(e) then Duel.SendtoHand(tc,nil,REASON_EFFECT) end
 end
