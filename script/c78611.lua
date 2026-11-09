@@ -5,21 +5,25 @@ function s.initial_effect(c)
 	Xyz.AddProcedure(c,nil,8,2,s.ovfilter,aux.Stringid(id,0),8,s.xyzop)
 	c:EnableReviveLimit()
 
-	-- While 8+ materials: Cannot be Tributed or used as Extra Deck material
+	-- While 8+ materials: Cannot be Tributed by opponent, cannot be used as material by opponent (allow owner to Rank-up)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e1:SetRange(LOCATION_MZONE)
 	e1:SetCode(EFFECT_UNRELEASABLE_SUM)
 	e1:SetCondition(s.matcon)
-	e1:SetValue(1)
+	e1:SetValue(s.relval)
 	c:RegisterEffect(e1)
 	local e1b=e1:Clone()
 	e1b:SetCode(EFFECT_UNRELEASABLE_NONSUM)
 	c:RegisterEffect(e1b)
-	local e1c=e1:Clone()
+	local e1c=Effect.CreateEffect(c)
+	e1c:SetType(EFFECT_TYPE_SINGLE)
+	e1c:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e1c:SetRange(LOCATION_MZONE)
 	e1c:SetCode(EFFECT_CANNOT_BE_MATERIAL)
-	e1c:SetValue(aux.cannotmatfilter(SUMMON_TYPE_FUSION,SUMMON_TYPE_SYNCHRO,SUMMON_TYPE_XYZ,SUMMON_TYPE_LINK))
+	e1c:SetCondition(s.matcon)
+	e1c:SetValue(s.matval)
 	c:RegisterEffect(e1c)
 
 	-- Quick Effect: Detach 2, negate activation and destroy
@@ -62,6 +66,20 @@ end
 
 function s.matcon(e)
 	return e:GetHandler():GetOverlayCount()>=8
+end
+
+-- Chỉ cấm đối thủ Tribute
+function s.relval(e,c)
+	return c and c:GetControler()~=e:GetHandlerPlayer()
+end
+
+-- Cấm dùng làm material nói chung, nhưng cho phép chính mình dùng để Xyz Summon quái thú Velvetect
+function s.matval(e,c,sumtype,tp)
+	if not c then return false end
+	if tp==e:GetHandlerPlayer() and (sumtype&SUMMON_TYPE_XYZ)==SUMMON_TYPE_XYZ and c:IsSetCard(0x786) then
+		return false
+	end
+	return true
 end
 
 function s.cost2(e,tp,eg,ep,ev,re,r,rp,chk)
