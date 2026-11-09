@@ -48,7 +48,7 @@ function s.cost1(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.attfilter(c)
-	return c:IsCanOverlay() and not c:IsStatus(STATUS_LEAVE_CONFIRMED)
+	return not c:IsType(TYPE_TOKEN) and not c:IsStatus(STATUS_LEAVE_CONFIRMED)
 end
 function s.attg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsOnField() and s.attfilter(chkc) and chkc~=e:GetHandler() end
