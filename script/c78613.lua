@@ -92,7 +92,7 @@ function s.atop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsRelateToEffect(e) and not c:IsImmuneToEffect(e) and Duel.GetFieldGroupCount(tp,0,LOCATION_DECK)>0 then
 		local tc=Duel.GetDecktopGroup(1-tp,1):GetFirst()
-		if tc and tc:IsCanOverlay() then
+		if tc then
 			Duel.DisableShuffleCheck()
 			Duel.Overlay(c,tc)
 		end
