@@ -5,14 +5,14 @@ function s.initial_effect(c)
 	Xyz.AddProcedure(c,nil,10,3,s.ovfilter,aux.Stringid(id,0),10,s.xyzop)
 	c:EnableReviveLimit()
 
-	-- Unaffected while having 10+ materials
+	-- Unaffected by opponent card effects while having 10+ materials
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e1:SetRange(LOCATION_MZONE)
 	e1:SetCode(EFFECT_IMMUNE_EFFECT)
-	e1:SetCondition(function(e) return e:GetHandler():GetOverlayCount()>=10 end)
-	e1:SetValue(function(e,te) return te:GetOwner()~=e:GetOwner() end)
+	e1:SetCondition(s.immcon)
+	e1:SetValue(s.efilter)
 	c:RegisterEffect(e1)
 
 	-- Quick Effect: Detach 3, banish all opponent Spells/Traps face-down
@@ -48,6 +48,13 @@ function s.xyzop(e,tp,chk)
 	if chk==0 then return Duel.GetFlagEffect(tp,id)==0 end
 	Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
 	return true
+end
+
+function s.immcon(e)
+	return e:GetHandler():GetOverlayCount()>=10
+end
+function s.efilter(e,te)
+	return te:GetOwnerPlayer()~=e:GetHandlerPlayer()
 end
 
 function s.cost3(e,tp,eg,ep,ev,re,r,rp,chk)
