@@ -61,7 +61,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
 		local sc=g:GetFirst()
 		if sc and Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)>0 then
-			if not c:IsRelateToEffect(e) or not c:IsCanOverlay() then return end
+			if not c:IsRelateToEffect(e) then return end
 			local target_xyz=nil
 			if sc:IsType(TYPE_XYZ) then
 				target_xyz=sc
