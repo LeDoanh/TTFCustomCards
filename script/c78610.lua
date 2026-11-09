@@ -5,7 +5,7 @@ function s.initial_effect(c)
 	Xyz.AddProcedure(c,nil,6,2,s.ovfilter,aux.Stringid(id,0),6,s.xyzop)
 	c:EnableReviveLimit()
 
-	-- Unaffected by monster effects with lower Rank/Level
+	-- Unaffected by opponent monster effects with lower Rank/Level
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -56,7 +56,8 @@ function s.cost2(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.efilter(e,te)
-	if not te:IsActiveType(TYPE_MONSTER) then return false end
+	-- Chỉ miễn nhiễm trước hiệu ứng của đối thủ
+	if te:GetOwnerPlayer()==e:GetHandlerPlayer() or not te:IsActiveType(TYPE_MONSTER) then return false end
 	local tc=te:GetHandler()
 	local rk=e:GetHandler():GetRank()
 	return (tc:IsType(TYPE_XYZ) and tc:GetRank()<rk) or (not tc:IsType(TYPE_XYZ) and tc:HasLevel() and tc:GetLevel()<rk)
@@ -75,14 +76,14 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.atfilter(c)
-	return (c:IsSetCard(0x786) or c:IsSetCard(0x777)) and c:IsCanOverlay()
+	return (c:IsSetCard(0x786) or c:IsSetCard(0x777))
 end
 function s.atttg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.atfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil) end
 end
 function s.attop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and not c:IsImmuneToEffect(e) then
+	if c:IsRelateToEffect(e) and c:IsFaceup() then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
 		local g=Duel.SelectMatchingCard(tp,s.atfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil)
 		if #g>0 then
