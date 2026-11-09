@@ -86,13 +86,13 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.atttg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsCanOverlay,tp,0,LOCATION_GRAVE,1,nil) end
+	if chk==0 then return Duel.GetFieldGroupCount(tp,0,LOCATION_GRAVE)>0 end
 end
 function s.attop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsRelateToEffect(e) and not c:IsImmuneToEffect(e) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
-		local g=Duel.SelectMatchingCard(tp,Card.IsCanOverlay,tp,0,LOCATION_GRAVE,1,2,nil)
+		local g=Duel.SelectMatchingCard(tp,nil,tp,0,LOCATION_GRAVE,1,2,nil)
 		if #g>0 then
 			Duel.Overlay(c,g)
 		end
