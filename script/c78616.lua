@@ -72,13 +72,13 @@ function s.atcon1(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.attg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsType(TYPE_XYZ) end,tp,LOCATION_MZONE,0,1,nil)
-		and Duel.IsExistingMatchingCard(Card.IsCanOverlay,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,nil) end
+		and Duel.GetFieldGroupCount(tp,LOCATION_GRAVE,LOCATION_GRAVE)>0 end
 end
 function s.attop(e,tp,eg,ep,ev,re,r,rp)
 	local xyzg=Duel.GetMatchingGroup(function(c) return c:IsFaceup() and c:IsType(TYPE_XYZ) end,tp,LOCATION_MZONE,0,nil)
 	if #xyzg==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
-	local g=Duel.SelectMatchingCard(tp,Card.IsCanOverlay,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,nil,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,1,nil)
 	if #g>0 then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 		local tc=xyzg:Select(tp,1,1,nil):GetFirst()
