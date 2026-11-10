@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng: Cho phép kích hoạt Sky Striker Spell kể cả khi có quái thú ở Main Monster Zone (Bypass Hook)
+	-- Hiệu ứng: Cho phép kích hoạt Sky Striker Spell kể cả khi có quái thú ở Main Monster Zone
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e2:SetCode(EVENT_ADJUST)
@@ -64,7 +64,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- HỆ THỐNG HOOK: OVERRIDE LỖI MAIN MONSTER ZONE (GIỐNG CARD 24)
+-- HỆ THỐNG HOOK: OVERRIDE LỖI MAIN MONSTER ZONE
 --------------------------------------------------------------------------------
 if not s.sky_striker_hooked then
 	s.sky_striker_hooked=true
@@ -142,7 +142,7 @@ function s.patch_cfilter()
 		end
 	end
 end
-s.patch_cfilter()
+pcall(s.patch_cfilter)
 
 function s.adjustop(e,tp,eg,ep,ev,re,r,rp)
 	pcall(s.patch_cfilter)
