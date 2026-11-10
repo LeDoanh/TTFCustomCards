@@ -64,7 +64,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- HỆ THỐNG HOOK: OVERRIDE LỖI MAIN MONSTER ZONE
+-- HỆ THỐNG HOOK: OVERRIDE LỖI MAIN MONSTER ZONE (CHUẨN TỪ CARD 24)
 --------------------------------------------------------------------------------
 if not s.sky_striker_hooked then
 	s.sky_striker_hooked=true
@@ -75,13 +75,13 @@ if not s.sky_striker_hooked then
 	local old_IsExistingMatchingCard=Duel.IsExistingMatchingCard
 
 	local function is_assembly_active(tp)
-		return old_IsExistingMatchingCard and old_IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsCode(id) and not c:IsDisabled() end, tp, LOCATION_FZONE, 0, 1, nil)
+		return old_IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsCode(id) and not c:IsDisabled() end, tp, LOCATION_FZONE, 0, 1, nil)
 	end
 
 	local function is_mmzone(loc)
 		if not loc then return false end
 		local mmz = rawget(_G, "LOCATION_MMZONE")
-		return (mmz and (loc & mmz) ~= 0) or loc == LOCATION_MZONE
+		return (mmz and loc == mmz)
 	end
 
 	if old_GetFieldGroupCount then
@@ -113,11 +113,10 @@ if not s.sky_striker_hooked then
 
 	if old_IsExistingMatchingCard then
 		Duel.IsExistingMatchingCard=function(f, p, s_loc, o_loc, ct, ex, ...)
-			local count = ct or 1
 			if is_mmzone(s_loc) and is_assembly_active(p) then
 				return false
 			end
-			return old_IsExistingMatchingCard(f, p, s_loc, o_loc, count, ex, ...)
+			return old_IsExistingMatchingCard(f, p, s_loc, o_loc, ct, ex, ...)
 		end
 	end
 end
@@ -129,11 +128,8 @@ function s.patch_cfilter()
 			if type(v.cfilter)=="function" then
 				local old_cfilter=v.cfilter
 				v.cfilter=function(c,...)
-					if c and c:GetControler then
-						local tp = c:GetControler()
-						if Duel.IsExistingMatchingCard(function(tc) return tc:IsFaceup() and tc:IsCode(id) and not tc:IsDisabled() end, tp, LOCATION_FZONE, 0, 1, nil) then
-							return false
-						end
+					if Duel.IsExistingMatchingCard(function(tc) return tc:IsFaceup() and tc:IsCode(id) and not tc:IsDisabled() end,c:GetControler(),LOCATION_FZONE,0,1,nil) then
+						return false
 					end
 					return old_cfilter(c,...)
 				end
@@ -142,10 +138,10 @@ function s.patch_cfilter()
 		end
 	end
 end
-pcall(s.patch_cfilter)
+s.patch_cfilter()
 
 function s.adjustop(e,tp,eg,ep,ev,re,r,rp)
-	pcall(s.patch_cfilter)
+	s.patch_cfilter()
 end
 
 --------------------------------------------------------------------------------
