@@ -14,14 +14,6 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng continuous: Theo dõi và điều chỉnh trạng thái
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e2:SetCode(EVENT_ADJUST)
-	e2:SetRange(LOCATION_FZONE)
-	e2:SetOperation(s.adjustop)
-	c:RegisterEffect(e2)
-
 	-- Hiệu ứng: Tăng 300 ATK/DEF cho quái "Sky Striker" ở Extra Monster Zone với mỗi Spell trong GY
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
@@ -61,73 +53,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			Duel.ConfirmCards(1-tp,sg)
 		end
 	end
-end
-
---------------------------------------------------------------------------------
--- HỆ THỐNG HOOK AN TOÀN (KHẮC PHỤC LỖI NIL PARAMETER)
---------------------------------------------------------------------------------
-if not s.sky_striker_hooked then
-	s.sky_striker_hooked=true
-	
-	local old_IsExistingMatchingCard = Duel.IsExistingMatchingCard
-	local old_GetMatchingGroupCount = Duel.GetMatchingGroupCount
-
-	local function is_assembly_active(tp)
-		return old_IsExistingMatchingCard and old_IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsCode(id) and not c:IsDisabled() end, tp, LOCATION_FZONE, 0, 1, nil)
-	end
-
-	local function is_mmzone(loc)
-		if not loc then return false end
-		local mmz = rawget(_G, "LOCATION_MMZONE")
-		return (mmz and (loc & mmz) ~= 0) or loc == LOCATION_MZONE
-	end
-
-	if old_GetMatchingGroupCount then
-		Duel.GetMatchingGroupCount=function(f, p, s_loc, o_loc, ex, ...)
-			if is_mmzone(s_loc) and is_assembly_active(p) and f and type(f)=="function" then
-				-- Kiểm tra nếu bộ lọc đang đếm số quái thú ở Main Monster Zone để check Sky Striker Spell
-				local dummy_group = Duel.GetMatchingGroup(f, p, s_loc, o_loc, ex, ...)
-				-- Nếu muốn lách luật check quái ở MMZ, có thể trả về 0 nếu cần thiết
-			end
-			return old_GetMatchingGroupCount(f, p, s_loc, o_loc, ex, ...)
-		end
-	end
-
-	if old_IsExistingMatchingCard then
-		Duel.IsExistingMatchingCard=function(f, p, s_loc, o_loc, ct, ex, ...)
-			-- Đảm bảo tham số ct (count) không bị nil để tránh crash script
-			local count = ct or 1
-			if is_mmzone(s_loc) and is_assembly_active(p) then
-				-- Trả về false an toàn khi check quái ở MMZ nếu cần
-			end
-			return old_IsExistingMatchingCard(f, p, s_loc, o_loc, count, ex, ...)
-		end
-	end
-end
-
-s.patched_tables = {}
-function s.patch_cfilter()
-	for k,v in pairs(_G) do
-		if type(k)=="string" and k:sub(1,1)=="c" and type(v)=="table" and not s.patched_tables[v] then
-			if type(v.cfilter)=="function" then
-				local old_cfilter=v.cfilter
-				v.cfilter=function(c,...)
-					if c and c:GetControler then
-						local tp = c:GetControler()
-						if Duel.IsExistingMatchingCard(function(tc) return tc:IsFaceup() and tc:IsCode(id) and not tc:IsDisabled() end, tp, LOCATION_FZONE, 0, 1, nil) then
-							return false
-						end
-					end
-					return old_cfilter(c,...)
-				end
-				s.patched_tables[v]=true
-			end
-		end
-	end
-end
-
-function s.adjustop(e,tp,eg,ep,ev,re,r,rp)
-	pcall(s.patch_cfilter)
 end
 
 --------------------------------------------------------------------------------
