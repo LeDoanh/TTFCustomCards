@@ -64,7 +64,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- HỆ THỐNG HOOK: OVERRIDE LỖI MAIN MONSTER ZONE (CHUẨN TỪ CARD 24)
+-- HỆ THỐNG HOOK: Override lỗi Main Monster Zone (Chuẩn theo mẫu Sector Omega)
 --------------------------------------------------------------------------------
 if not s.sky_striker_hooked then
 	s.sky_striker_hooked=true
