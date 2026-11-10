@@ -27,16 +27,11 @@ function s.condition(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- LỌC MỤC TIÊU CƠ BẢN
+-- LỌC MỤC TIÊU (ĐÃ SỬA CHUẨN ĐỂ GỌI SANG SÂN ĐỐI THỦ 1-tp)
 --------------------------------------------------------------------------------
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(SET_SKY_STRIKER) and c:IsLevel(4)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE,1-tp)
-end
-
-function s.basicfilter(c,e,tp)
-	return c:IsSetCard(SET_SKY_STRIKER) and c:IsLevel(4)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE,1-tp)
+		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE,1-tp,1-tp)
 end
 
 function s.thfilter(c)
@@ -49,24 +44,27 @@ end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		-- Kiểm tra sân đối thủ (1-tp) phải có ít nhất 2 ô trống ở Main Monster Zone
-		return Duel.GetLocationCount(1-tp,LOCATION_MZONE)>=2
-			and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.basicfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,2,nil,e,tp)
+		if Duel.GetLocationCount(1-tp, LOCATION_MZONE) < 2 then return false end
+		-- Kiểm tra trong Deck hoặc Mộ có đủ ít nhất 2 quái Level 4 "Sky Striker" hợp lệ để gọi sang sân đối thủ
+		local g=Duel.GetMatchingGroup(s.spfilter, tp, LOCATION_DECK+LOCATION_GRAVE, 0, nil, e, tp)
+		return g:GetClassCount(Card.GetCode) >= 2 or #g >= 2
 	end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_DECK+LOCATION_GRAVE)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
+	Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, nil, 2, tp, LOCATION_DECK+LOCATION_GRAVE)
+	Duel.SetPossibleOperationInfo(0, CATEGORY_TOHAND, nil, 1, tp, LOCATION_GRAVE)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if Duel.GetLocationCount(1-tp,LOCATION_MZONE)<2 then return end
+	if Duel.GetLocationCount(1-tp, LOCATION_MZONE) < 2 then return end
 	
-	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,e,tp)
-	if #g>=2 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local sg=g:Select(tp,2,2,nil)
-		if #sg==2 then
+	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.spfilter), tp, LOCATION_DECK+LOCATION_GRAVE, 0, nil, e, tp)
+	if #g >= 2 then
+		Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_SPSUMMON)
+		local sg=g:Select(tp, 2, 2, nil)
+		if #sg == 2 then
 			for tc in aux.Next(sg) do
-				if Duel.SpecialSummonStep(tc,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE) then
+				-- Thực hiện Special Summon sang sân đối thủ (1-tp) ở thế phòng thủ mặt ngửa
+				if Duel.SpecialSummonStep(tc, 0, tp, 1-tp, false, false, POS_FACEUP_DEFENSE) then
 					-- Vô hiệu hóa hiệu ứng của quái được gọi
 					local e1=Effect.CreateEffect(c)
 					e1:SetType(EFFECT_TYPE_SINGLE)
@@ -109,18 +107,18 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetTargetRange(1,0)
 	e1:SetTarget(s.splimit)
 	e1:SetReset(RESET_PHASE+PHASE_END)
-	Duel.RegisterEffect(e1,tp)
+	Duel.RegisterEffect(e1, tp)
 
 	-- Nếu có từ 3 Spell trở lên trong Mộ: Lấy 1 lá "Sky Striker" từ Mộ lên tay
-	if Duel.GetMatchingGroupCount(Card.IsSpell,tp,LOCATION_GRAVE,0,nil)>=3
-		and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.thfilter),tp,LOCATION_GRAVE,0,1,nil)
-		and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+	if Duel.GetMatchingGroupCount(Card.IsSpell, tp, LOCATION_GRAVE, 0, nil) >= 3
+		and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.thfilter), tp, LOCATION_GRAVE, 0, 1, nil)
+		and Duel.SelectYesNo(tp, aux.Stringid(id, 1)) then
 		Duel.BreakEffect()
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-		local thg=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.thfilter),tp,LOCATION_GRAVE,0,1,1,nil)
-		if #thg>0 then
-			Duel.SendtoHand(thg,nil,REASON_EFFECT)
-			Duel.ConfirmCards(1-tp,thg)
+		Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_ATOHAND)
+		local thg=Duel.SelectMatchingCard(tp, aux.NecroValleyFilter(s.thfilter), tp, LOCATION_GRAVE, 0, 1, 1, nil)
+		if #thg > 0 then
+			Duel.SendtoHand(thg, nil, REASON_EFFECT)
+			Duel.ConfirmCards(1-tp, thg)
 		end
 	end
 end
