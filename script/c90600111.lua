@@ -2,7 +2,7 @@
 -- ID: 90600111
 local s,id=GetID()
 local SET_SKY_STRIKER = 0x115
-local SET_SANGEN     = 0x14e -- Hoặc điều chỉnh setcode tùy ý cho bộ Sangenpai
+local SET_SANGEN     = 0x14e
 
 function s.initial_effect(c)
 	c:EnableReviveLimit()
