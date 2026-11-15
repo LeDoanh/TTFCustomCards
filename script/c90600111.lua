@@ -86,7 +86,9 @@ end
 
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GY,0,nil)
-	if chk==0 then return g:GetClassCount(Card.GetCode)>=3 and g:IsExists(s.qpfilter,1,nil) end
+	if chk==0 then 
+		return g:IsExists(s.qpfilter,1,nil) and g:GetCount()>=3 
+	end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g1=g:FilterSelect(tp,s.qpfilter,1,1,nil)
 	g:Sub(g1)
