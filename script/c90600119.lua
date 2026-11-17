@@ -12,7 +12,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- ② Kháng cho quái Level 10+ và chặn Slifer tự gửi vào GY ở End Phase
+	-- ② Kháng chọn mục tiêu cho quái Level 10+
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
@@ -22,11 +22,19 @@ function s.initial_effect(c)
 	e2:SetTarget(s.immtg)
 	e2:SetValue(aux.tgoval)
 	c:RegisterEffect(e2)
-	local e3=e2:Clone()
+
+	-- Kháng hủy diệt cho quái Level 10+
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_FIELD)
+	e3:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
 	e3:SetCode(EFFECT_CANNOT_DESTROY)
+	e3:SetRange(LOCATION_FZONE)
+	e3:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
+	e3:SetTarget(s.immtg)
 	e3:SetValue(aux.indoval)
 	c:RegisterEffect(e3)
 
+	-- Chặn Slifer tự gửi vào GY ở End Phase
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_FIELD)
 	e4:SetCode(EFFECT_CANNOT_TO_GRAVE)
