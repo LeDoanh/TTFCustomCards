@@ -1,5 +1,5 @@
 -- Sky Striker Maneuver - Sangen Burst
--- ID: 90600114
+-- ID: 90600111
 local s,id=GetID()
 local SET_SKY_STRIKER = 0x115
 local SET_SANGEN      = 0x14e
