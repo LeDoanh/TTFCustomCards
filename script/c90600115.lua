@@ -40,8 +40,15 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
+s.listed_names={10000000}
+s.listed_series={SET_CRIMSON}
+
+function s.divinefilter(c)
+	return c:IsFaceup() and c:IsRace(RACE_DIVINE)
+end
+
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(Card.IsRace,tp,LOCATION_MZONE,0,1,nil,RACE_DIVINEBEAST)
+	return Duel.IsExistingMatchingCard(s.divinefilter,tp,LOCATION_MZONE,0,1,nil)
 		or Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil,10000000)
 end
 
@@ -67,7 +74,7 @@ end
 function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return eg:IsExists(s.repfilter,1,nil,tp)
 		and Duel.IsExistingMatchingCard(Card.IsAbleToGrave,tp,LOCATION_HAND,0,1,nil) end
-	if Duel.SelectEffectYesNo(e:GetHandler(),tp,aux.Stringid(id,2)) then
+	if Duel.SelectEffectYesNo(tp,e:GetHandler(),aux.Stringid(id,2)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 		local g=Duel.SelectMatchingCard(tp,Card.IsAbleToGrave,tp,LOCATION_HAND,0,1,1,nil)
 		e:SetLabelObject(g:GetFirst())
@@ -91,7 +98,7 @@ function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.tgfilter(c)
-	return c:IsLevelBelow(4) and (c:IsRace(RACE_DRAGON) or c:IsRace(RACE_DIVINEBEAST)) and (c:IsAbleToHand() or c:IsAbleToGrave())
+	return c:IsLevelBelow(4) and (c:IsRace(RACE_DRAGON) or c:IsRace(RACE_DIVINE)) and (c:IsAbleToHand() or c:IsAbleToGrave())
 end
 
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
