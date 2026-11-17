@@ -11,14 +11,6 @@ function s.initial_effect(c)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
 	c:RegisterEffect(e0)
-	
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_ALLOW_SPECIAL_SUMMON)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetTarget(s.sumlimit)
-	c:RegisterEffect(e1)
 
 	local e1_sp=Effect.CreateEffect(c)
 	e1_sp:SetDescription(aux.Stringid(id,0))
@@ -83,10 +75,6 @@ function s.initial_effect(c)
 end
 
 s.listed_series={SET_CRIMSON}
-
-function s.sumlimit(e,c,sump,sumtype,sumpos,targetp,se)
-	return c==e:GetHandler()
-end
 
 function s.costfilter(c)
 	return c:IsFaceup() and c:IsAbleToGraveAsCost()
