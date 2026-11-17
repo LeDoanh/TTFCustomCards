@@ -5,10 +5,8 @@ local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	-- Link Summon procedure: 1 Level 4 or lower FIRE or Dragon monster
 	Link.AddProcedure(c,s.matfilter,1,1)
 
-	-- ① Nếu được Link Summon: Add 1 Field hoặc Continuous Spell list Slifer/Divine-Beast từ Deck
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -20,7 +18,6 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- ② Quick Effect: Tribute card này để NS Divine-Beast từ tay (tính là 3 Tributes)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SUMMON)
@@ -65,7 +62,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.sumfilter(c)
-	return c:IsRace(RACE_DIVINEBEAST) and c:IsSummonable(true,nil,3)
+	return c:IsRace(0x400) and c:IsSummonable(true,nil,3)
 end
 
 function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
