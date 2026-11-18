@@ -1,8 +1,9 @@
 
 --Crimson Herald - Sky Conduit
 --ID: 18199611
+
 local s,id=GetID()
-local SET_CRIMSON = 0x1405
+local SET_CRIMSON=0x1405
 
 function s.initial_effect(c)
     c:EnableReviveLimit()
@@ -13,7 +14,7 @@ function s.initial_effect(c)
 
     --① If this card is Link Summoned:
     --Add 1 Field Spell or Continuous Spell
-    --that mentions "Slifer the Sky Dragon" or "Divine-Beast"
+    --that mentions Slifer the Sky Dragon or Divine-Beast
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -26,10 +27,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 
     --② Quick Effect: Tribute this card;
-    --immediately after this effect resolves,
-    --Special Summon 1 Divine-Beast monster
-    --from your hand, Deck or GY
-    --(You can treat this as a Normal Summon).
+    --Special Summon 1 Divine-Beast from hand, Deck or GY.
+    --This Special Summon is treated as an Advance Summon.
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -46,7 +45,7 @@ end
 s.listed_names={10000020}
 s.listed_series={SET_CRIMSON}
 
---Link Material:
+--Link Material
 --1 Level 4 or lower FIRE or Dragon monster
 function s.matfilter(c,lc,sumtype,tp)
     return c:IsLevelBelow(4)
@@ -54,14 +53,11 @@ function s.matfilter(c,lc,sumtype,tp)
         or c:IsRace(RACE_DRAGON))
 end
 
---Effect 1: Link Summon condition
+--Effect 1
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
 
---Search filter:
---Field Spell or Continuous Spell
---that mentions Slifer or Divine-Beast
 function s.thfilter(c)
     return (c:IsType(TYPE_FIELD) or c:IsType(TYPE_CONTINUOUS))
         and (
@@ -92,10 +88,10 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
---Effect 2: Divine-Beast monster filter
+--Effect 2: Divine-Beast filter
 function s.spfilter(c,e,tp)
-    return c:IsRace(0x400)
-        and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
+    return c:IsRace(RACE_DIVINE)
+        and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
 end
 
 --Tribute this card as cost
@@ -107,7 +103,7 @@ function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.Release(c,REASON_COST+REASON_RELEASE)
 end
 
---Special Summon target
+--Target
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.GetLocationCount(tp,LOCATION_MZONE)>-1
@@ -122,7 +118,7 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
         LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE)
 end
 
---Special Summon and treat as Normal/Advance Summon
+--Operation
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then
         return
@@ -139,7 +135,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local tc=g:GetFirst()
     if tc then
         if Duel.SpecialSummon(
-            tc,SUMMON_TYPE_ADVANCE,tp,tp,true,false,
+            tc,SUMMON_TYPE_ADVANCE,tp,tp,true,true,
             POS_FACEUP)~=0 then
 
             tc:CompleteProcedure()
