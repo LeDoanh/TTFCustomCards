@@ -40,18 +40,19 @@ end
 s.listed_names={10000020, 10000022, 90600112}
 s.listed_series={SET_CRIMSON}
 
-function s.actfilter(c,e,tp)
-	return c:IsCode(10000020, 10000022, 90600112) and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
-end
-
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.actfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,e,tp) end
+	if chk==0 then return Duel.IsExistingMatchingCard(aux.NecroValleyFilter(function(c) 
+		return c:IsCode(10000020, 10000022, 90600112) and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false)) 
+	end),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if not e:GetHandler():IsRelateToEffect(e) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
-	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.actfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,tp)
+	-- Sử dụng trực tiếp hàm ẩn để tránh lỗi truyền tham số trong bộ lọc
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(function(c) 
+		return c:IsCode(10000020, 10000022, 90600112) and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false)) 
+	end),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
 	local tc=g:GetFirst()
 	if tc then
 		local b1=not tc:IsForbidden() and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
