@@ -112,12 +112,15 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 		local b2=tc:IsAbleToGrave()
 		local op=0
 		if b1 and b2 then
-			op=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4))
+			-- Sử dụng chuỗi mặc định của hệ thống thay vì Stringid chưa config để tránh lỗi Nil Parameter
+			op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
+			if op==nil then op=0 end
 		elseif b1 then
-			op=Duel.SelectOption(tp,aux.Stringid(id,3))
+			op=0
 		else
-			op=Duel.SelectOption(tp,aux.Stringid(id,4))+1
+			op=1
 		end
+		
 		if op==0 then
 			Duel.SendtoHand(tc,nil,REASON_EFFECT)
 			Duel.ConfirmCards(1-tp,tc)
