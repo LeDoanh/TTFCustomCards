@@ -41,35 +41,38 @@ end
 s.listed_names={10000020,10000022,90600112}
 s.listed_series={SET_CRIMSON}
 
-function s.filter(c,e,tp)
-	return c:IsCode(10000020,10000022,90600112) 
-		and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
-		and (not c:IsLocation(LOCATION_GRAVE) or not Duel.IsPlayerAffectedByEffect(tp,59822133))
-end
-
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,e,tp) end
+	if chk==0 then 
+		return Duel.IsExistingMatchingCard(function(c)
+			return c:IsCode(10000020,10000022,90600112) 
+				and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
+				and (not c:IsLocation(LOCATION_GRAVE) or not Duel.IsPlayerAffectedByEffect(tp,59822133))
+		end,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil) 
+	end
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if not e:GetHandler():IsRelateToEffect(e) then return end
-	local player=e:GetHandlerPlayer()
-	Duel.Hint(HINT_SELECTMSG,player,HINTMSG_OPERATECARD)
-	local g=Duel.SelectMatchingCard(player,s.filter,player,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,player)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
+	local g=Duel.SelectMatchingCard(tp,function(c)
+		return c:IsCode(10000020,10000022,90600112) 
+			and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
+			and (not c:IsLocation(LOCATION_GRAVE) or not Duel.IsPlayerAffectedByEffect(tp,59822133))
+	end,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
 	local tc=g:GetFirst()
 	if tc then
-		local b1=not tc:IsForbidden() and Duel.GetLocationCount(player,LOCATION_SZONE)>0
-		local b2=tc:IsCanBeSpecialSummoned(e,0,player,true,false) and Duel.GetLocationCount(player,LOCATION_MZONE)>0
+		local b1=not tc:IsForbidden() and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
+		local b2=tc:IsCanBeSpecialSummoned(e,0,tp,true,false) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		local op=0
 		if b1 and b2 then
-			op=Duel.SelectOption(player,aux.Stringid(id,1),aux.Stringid(id,2))
+			op=Duel.SelectOption(tp,aux.Stringid(id,1),aux.Stringid(id,2))
 		elseif b1 then
-			op=Duel.SelectOption(player,aux.Stringid(id,1))
+			op=Duel.SelectOption(tp,aux.Stringid(id,1))
 		else
-			op=Duel.SelectOption(player,aux.Stringid(id,2))+1
+			op=Duel.SelectOption(tp,aux.Stringid(id,2))+1
 		end
 		if op==0 then
-			Duel.MoveToField(tc,player,player,LOCATION_SZONE,POS_FACEUP,true)
+			Duel.MoveToField(tc,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
 			local e1=Effect.CreateEffect(e:GetHandler())
 			e1:SetType(EFFECT_TYPE_SINGLE)
 			e1:SetCode(EFFECT_CHANGE_TYPE)
@@ -78,7 +81,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			e1:SetReset(RESET_EVENT+RESETS_STANDARD-RESET_TURN_SET)
 			tc:RegisterEffect(e1)
 		else
-			Duel.SpecialSummon(tc,0,player,player,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 			tc:CompleteProcedure()
 		end
 	end
