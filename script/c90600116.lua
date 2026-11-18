@@ -1,10 +1,9 @@
--- Crimson Dragon - Guardian of the Sky (Level 4 version)
+-- Crimson Dragon - Guardian of the Sky
 -- ID: 90600116
 local s,id=GetID()
 local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① SS từ tay nếu không có quái hoặc kiểm soát Divine-Beast
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -16,7 +15,6 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- ② Khi NS/SS: Gọi tối đa 2 bản sao từ tay/Deck/GY để làm Tribute Summon cho Divine-Beast
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -31,7 +29,6 @@ function s.initial_effect(c)
 	e2_clone:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e2_clone)
 
-	-- ③ Banish từ GY trong Main Phase: Tribute Summon Slifer ngay lập tức
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_SUMMON)
@@ -44,9 +41,12 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
+
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0
-		or Duel.IsExistingMatchingCard(Card.IsRace,tp,LOCATION_MZONE,0,1,nil,RACE_DIVINEBEAST)
+		or Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,1,nil)
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -94,7 +94,7 @@ function s.spop2(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.sumfilter(c)
-	return c:IsCode(10000000) and c:IsSummonable(true,nil,1)
+	return c:IsCode(10000020) and c:IsSummonable(true,nil,1)
 end
 
 function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)

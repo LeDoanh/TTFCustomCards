@@ -4,7 +4,6 @@ local s,id=GetID()
 local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① Khi được Normal hoặc Special Summon: Search Slifer hoặc S/T đề cập Slifer / Divine-Beast / Crimson
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -19,7 +18,6 @@ function s.initial_effect(c)
 	e1_clone:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e1_clone)
 
-	-- ② Banish từ GY trong Main Phase: NS 1 quái từ tay và có thể gửi 1 card từ tay xuống GY để rút 1
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SUMMON+CATEGORY_TOGRAVE+CATEGORY_DRAW)
@@ -32,8 +30,11 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
+
 function s.thfilter(c)
-	return (c:IsCode(10000000) or (c:IsSpellTrap() and (c:ListsCode(10000000) or c:IsSetCard(SET_CRIMSON)))) and c:IsAbleToHand()
+	return (c:IsCode(10000020, 10000022, 90600112) or c:ListsCode(10000020) or c:ListsCode(10000022) or c:ListsCode(90600112) or c:IsSetCard(SET_CRIMSON)) and c:IsAbleToHand()
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)

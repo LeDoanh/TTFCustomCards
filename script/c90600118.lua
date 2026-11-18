@@ -1,9 +1,9 @@
 -- Thunderforce Overdrive
 -- ID: 90600118
 local s,id=GetID()
+local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① Nếu kiểm soát Divine-Beast: Tiêu diệt quái đối thủ có ATK <= ATK cao nhất của Divine-Beast bạn điều khiển, rút bài tương ứng
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_DESTROY+CATEGORY_DRAW)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -14,7 +14,6 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- ② Banish từ GY trong Main Phase: SS Slifer hoặc Crimson Slifer từ GY, rút 2 lá
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW)
@@ -27,8 +26,11 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
+
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsRace(RACE_DIVINEBEAST)
+	return c:IsFaceup() and c:IsRace(0x400)
 end
 
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
@@ -66,7 +68,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.spfilter(c,e,tp)
-	return (c:IsCode(10000000) or c:IsCode(90600112)) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
+	return (c:IsCode(10000020, 10000022, 90600112)) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)

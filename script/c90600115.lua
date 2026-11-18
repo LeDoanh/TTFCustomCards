@@ -4,7 +4,6 @@ local s,id=GetID()
 local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① SS từ tay nếu kiểm soát Divine-Beast hoặc có Slifer trong GY/tay
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -16,7 +15,6 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- ② Thay thế phá hủy bằng cách gửi 1 card từ tay xuống GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e2:SetCode(EFFECT_DESTROY_REPLACE)
@@ -26,7 +24,6 @@ function s.initial_effect(c)
 	e2:SetOperation(s.repop)
 	c:RegisterEffect(e2)
 
-	-- ③ Nếu bị gửi từ sân vào GY: Search/Foolish Level 4 trở xuống Dragon hoặc Divine-Beast
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_TOGRAVE)
@@ -40,16 +37,16 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
-s.listed_names={10000000}
+s.listed_names={10000020, 10000022, 90600112}
 s.listed_series={SET_CRIMSON}
 
 function s.divinefilter(c)
-	return c:IsFaceup() and c:IsRace(RACE_DIVINE)
+	return c:IsFaceup() and c:IsRace(0x400)
 end
 
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.divinefilter,tp,LOCATION_MZONE,0,1,nil)
-		or Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil,10000000)
+		or Duel.IsExistingMatchingCard(function(c) return c:IsCode(10000020, 10000022, 90600112) end,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil)
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -98,7 +95,7 @@ function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.tgfilter(c)
-	return c:IsLevelBelow(4) and (c:IsRace(RACE_DRAGON) or c:IsRace(RACE_DIVINE)) and (c:IsAbleToHand() or c:IsAbleToGrave())
+	return c:IsLevelBelow(4) and (c:IsRace(RACE_DRAGON) or c:IsRace(0x400)) and (c:IsAbleToHand() or c:IsAbleToGrave())
 end
 
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)

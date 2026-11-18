@@ -35,6 +35,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
+
 function s.matfilter(c,lc,sumtype,tp)
 	return c:IsLevelBelow(4) and (c:IsAttribute(ATTRIBUTE_FIRE) or c:IsRace(RACE_DRAGON))
 end
@@ -44,7 +47,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.thfilter(c)
-	return (c:IsType(TYPE_FIELD) or c:IsType(TYPE_CONTINUOUS)) and c:ListsCode(10000000) and c:IsAbleToHand()
+	return (c:IsCode(10000020, 10000022, 90600112) or c:ListsCode(10000020) or c:ListsCode(10000022) or c:ListsCode(90600112) or c:IsSetCard(SET_CRIMSON)) and c:IsAbleToHand()
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)

@@ -5,7 +5,6 @@ local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	-- Không thể Normal Summon/Set. Phải Special Summon từ tay bằng cách gửi 3 card ngửa từ sân xuống GY.
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -22,7 +21,6 @@ function s.initial_effect(c)
 	e1_sp:SetOperation(s.hsop)
 	c:RegisterEffect(e1_sp)
 
-	-- ① ATK/DEF gốc trở thành số lá trên tay x 1000
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -34,7 +32,6 @@ function s.initial_effect(c)
 	e3:SetCode(EFFECT_SET_BASE_DEFENSE)
 	c:RegisterEffect(e3)
 
-	-- ② Nếu được Special Summon: Rút bài cho đến khi có 6 lá trên tay
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_DRAW)
@@ -45,7 +42,6 @@ function s.initial_effect(c)
 	e4:SetOperation(s.drop)
 	c:RegisterEffect(e4)
 
-	-- ③ Khi đối thủ NS/SS quái thú: Giảm ATK/DEF và tiêu diệt nếu về 0
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,2))
 	e5:SetCategory(CATEGORY_ATKCHANGE+CATEGORY_DEFCHANGE+CATEGORY_DESTROY)
@@ -60,7 +56,6 @@ function s.initial_effect(c)
 	e5_clone:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e5_clone)
 
-	-- ④ Nếu lá bài dưới quyền kiểm soát của chủ nhân rời sân do card đối thủ: Gọi tối đa 2 quái Level 4+ Dragon hoặc Divine-Beast từ GY hoặc tay
 	local e6=Effect.CreateEffect(c)
 	e6:SetDescription(aux.Stringid(id,3))
 	e6:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -75,6 +70,7 @@ function s.initial_effect(c)
 end
 
 s.listed_series={SET_CRIMSON}
+s.listed_names={10000020, 10000022, 90600112}
 
 function s.costfilter(c)
 	return c:IsFaceup() and c:IsAbleToGraveAsCost()
@@ -165,7 +161,7 @@ function s.lfcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.lffilter(c,e,tp)
-	return c:IsLevelAbove(4) and (c:IsRace(RACE_DRAGON) or c:IsRace(RACE_DIVINEBEAST)) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsLevelAbove(4) and (c:IsRace(RACE_DRAGON|0x400)) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 
 function s.lftg(e,tp,eg,ep,ev,re,r,rp,chk)

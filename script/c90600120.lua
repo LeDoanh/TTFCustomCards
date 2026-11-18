@@ -1,9 +1,9 @@
 -- Thunderstorm Dominion
 -- ID: 90600120
 local s,id=GetID()
+local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① Kích hoạt: Đặt Slifer từ tay/Deck/GY vào S&T Zone như Continuous Spell hoặc SS nó
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
@@ -11,20 +11,18 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- ② Tăng 500 ATK/DEF cho mỗi card trên tay cho Divine-Beast
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetCode(EFFECT_UPDATE_ATTACK)
 	e2:SetRange(LOCATION_SZONE)
 	e2:SetTargetRange(LOCATION_MZONE,0)
-	e2:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_DIVINEBEAST))
+	e2:SetTarget(aux.TargetBoolFunction(Card.IsRace,0x400))
 	e2:SetValue(s.val)
 	c:RegisterEffect(e2)
 	local e3=e2:Clone()
 	e3:SetCode(EFFECT_UPDATE_DEFENSE)
 	c:RegisterEffect(e3)
 
-	-- ③ Once per turn: Gửi 1 card trên tay xuống GY để negate hiệu ứng và gây 1000 damage
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,0))
 	e4:SetCategory(CATEGORY_NEGATE+CATEGORY_DAMAGE)
@@ -39,8 +37,11 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
+
 function s.actfilter(c,e,tp)
-	return c:IsCode(10000000) and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
+	return c:IsCode(10000020, 10000022, 90600112) and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)

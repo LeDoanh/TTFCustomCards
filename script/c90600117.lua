@@ -1,9 +1,9 @@
 -- Descent of the Crimson Sky
 -- ID: 90600117
 local s,id=GetID()
+local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① Kích hoạt: Reveal Slifer từ tay/Deck, add lên tay, rồi có thể NS/SS ngay lập tức
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -13,7 +13,6 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- ② Banish từ GY trong Main Phase: Draw bài theo số Divine-Beast đang kiểm soát
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_DRAW)
@@ -26,8 +25,12 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
+
 function s.thfilter(c,e,tp)
-	return c:IsCode(10000000) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
+	return (c:IsCode(10000020, 10000022, 90600112) or c:ListsCode(10000020) or c:ListsCode(10000022) or c:ListsCode(90600112) or c:IsSetCard(SET_CRIMSON)) 
+		and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -69,13 +72,13 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local ct=Duel.GetMatchingGroupCount(Card.IsRace,tp,LOCATION_MZONE,0,nil,RACE_DIVINEBEAST)
+	local ct=Duel.GetMatchingGroupCount(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,nil)
 	if chk==0 then return ct>0 and Duel.IsPlayerCanDraw(tp,ct) end
 	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,ct)
 end
 
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local ct=Duel.GetMatchingGroupCount(Card.IsRace,tp,LOCATION_MZONE,0,nil,RACE_DIVINEBEAST)
+	local ct=Duel.GetMatchingGroupCount(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,nil)
 	if ct>0 then
 		Duel.Draw(tp,ct,REASON_EFFECT)
 	end

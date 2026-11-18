@@ -4,7 +4,6 @@ local s,id=GetID()
 local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① Nếu bị gửi làm nguyên liệu/Tribute/cost để kích hoạt hiệu ứng summon Divine-Beast: Draw 2, discard 1
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DRAW+CATEGORY_HANDES)
@@ -20,7 +19,6 @@ function s.initial_effect(c)
 	e1_tr:SetCode(EVENT_RELEASE)
 	c:RegisterEffect(e1_tr)
 
-	-- ② Quick Effect: Banish từ GY để xáo 1 Divine-Beast hoặc Dragon từ GY vào Deck, search S/T list "Slifer the Sky Dragon"
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK+CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -34,6 +32,9 @@ function s.initial_effect(c)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 end
+
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
 
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
@@ -54,11 +55,11 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.tdfilter(c)
-	return (c:IsRace(RACE_DIVINEBEAST) or c:IsRace(RACE_DRAGON)) and c:IsAbleToDeck()
+	return (c:IsRace(0x400) or c:IsRace(RACE_DRAGON)) and c:IsAbleToDeck()
 end
 
 function s.thfilter(c)
-	return c:IsSpellTrap() and c:ListsCode(10000000) and c:IsAbleToHand()
+	return (c:IsCode(10000020, 10000022, 90600112) or c:ListsCode(10000020) or c:ListsCode(10000022) or c:ListsCode(90600112) or c:IsSetCard(SET_CRIMSON)) and c:IsAbleToHand()
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)

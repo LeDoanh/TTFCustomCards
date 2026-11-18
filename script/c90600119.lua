@@ -4,7 +4,6 @@ local s,id=GetID()
 local SET_CRIMSON = 0x1405
 
 function s.initial_effect(c)
-	-- ① Kích hoạt: Add Crimson Slifer hoặc card list Slifer từ Deck lên tay
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -12,7 +11,6 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- ② Kháng chọn mục tiêu cho quái Level 10+
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
@@ -23,7 +21,6 @@ function s.initial_effect(c)
 	e2:SetValue(aux.tgoval)
 	c:RegisterEffect(e2)
 
-	-- Kháng hủy diệt cho quái Level 10+
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
 	e3:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
@@ -34,7 +31,6 @@ function s.initial_effect(c)
 	e3:SetValue(aux.indoval)
 	c:RegisterEffect(e3)
 
-	-- Chặn Slifer tự gửi vào GY ở End Phase
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_FIELD)
 	e4:SetCode(EFFECT_CANNOT_TO_GRAVE)
@@ -43,7 +39,6 @@ function s.initial_effect(c)
 	e4:SetTarget(s.togravetg)
 	c:RegisterEffect(e4)
 
-	-- ③ Khi đối thủ SS ở Attack Position khi kiểm soát Divine-Beast: Đổi sang Def hoặc banish úp mặt (nếu là FIRE Divine-Beast)
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,0))
 	e5:SetCategory(CATEGORY_POSITION+CATEGORY_REMOVE)
@@ -56,8 +51,11 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
+s.listed_names={10000020, 10000022, 90600112}
+s.listed_series={SET_CRIMSON}
+
 function s.thfilter(c)
-	return (c:IsCode(90600112) or c:ListsCode(10000000)) and c:IsAbleToHand()
+	return (c:IsCode(10000020, 10000022, 90600112) or c:ListsCode(10000020) or c:ListsCode(10000022) or c:ListsCode(90600112) or c:IsSetCard(SET_CRIMSON)) and c:IsAbleToHand()
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
@@ -76,7 +74,7 @@ function s.immtg(e,c)
 end
 
 function s.togravetg(e,c)
-	return c:IsCode(10000000)
+	return c:IsCode(10000020, 10000022)
 end
 
 function s.cfilter(c,tp)
@@ -85,12 +83,12 @@ function s.cfilter(c,tp)
 end
 
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(Card.IsRace,tp,LOCATION_MZONE,0,1,nil,RACE_DIVINEBEAST)
+	return Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,1,nil)
 		and eg:IsExists(s.cfilter,1,nil,tp)
 end
 
 function s.firedivinefilter(c)
-	return c:IsFaceup() and c:IsRace(RACE_DIVINEBEAST) and c:IsAttribute(ATTRIBUTE_FIRE)
+	return c:IsFaceup() and c:IsRace(0x400) and c:IsAttribute(ATTRIBUTE_FIRE)
 end
 
 function s.postg(e,tp,eg,ep,ev,re,r,rp,chk)
