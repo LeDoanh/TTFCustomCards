@@ -19,14 +19,15 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- ② Quick Effect: Tribute card này (tính là 3 Tributes) để Normal Summon 1 Divine-Beast từ tay
+	-- ② Quick Effect: Tribute card này để Special Summon 1 Divine-Beast từ tay, Deck hoặc GY (được tính là Normal Summon nhưng không mất lượt)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_SUMMON)
+	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
+	e2:SetCost(s.sumcost)
 	e2:SetTarget(s.sumtg)
 	e2:SetOperation(s.sumop)
 	c:RegisterEffect(e2)
@@ -61,30 +62,36 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Kiểm tra quái Divine-Beast trên tay có thể Normal Summon được khi dùng card này làm 3 Tributes
-function s.sumfilter(c,tp)
-	return c:IsRace(0x400) and c:IsSummonable(tp,true,nil,1,aux.Stringid(id,1))
+-- Bộ lọc tìm quái Divine-Beast có thể gọi từ tay, Deck hoặc GY
+function s.sumfilter(c,e,tp)
+	return c:IsRace(0x400) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
+end
+
+function s.sumcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsReleasable() end
+	Duel.Release(c,REASON_COST+REASON_RELEASE)
 end
 
 function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
 	if chk==0 then 
-		return c:IsReleasable() and Duel.IsExistingMatchingCard(s.sumfilter,tp,LOCATION_HAND,0,1,nil,tp) 
+		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
+			and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.sumfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,e,tp) 
 	end
-	Duel.SetOperationInfo(0,CATEGORY_SUMMON,nil,1,tp,LOCATION_HAND)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE)
 end
 
 function s.sumop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) or c:IsControler(1-tp) or not c:IsReleasable() then return end
-	
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SUMMON)
-	local g=Duel.SelectMatchingCard(tp,function(tc,p) return tc:IsRace(0x400) and tc:IsSummonable(p,true,nil,1,aux.Stringid(id,1)) end,tp,LOCATION_HAND,0,1,1,nil,tp)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.sumfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,tp)
 	local tc=g:GetFirst()
 	if tc then
-		-- Thực hiện Release card này làm cost/vật tế và cấu hình ghi nhận đủ 3 tributes cho quái Divine-Beast
-		if Duel.Release(c, REASON_COST+REASON_RELEASE) > 0 then
-			Duel.Summon(tp, tc, true, nil, 3)
+		-- Thực hiện Special Summon và đánh dấu đây là dạng triệu hồi đặc biệt được "treat" như Normal Summon của Thần (đủ điều kiện kích hoạt các hiệu ứng khi NS thành công mà không tốn lượt NS thường)
+		if Duel.SpecialSummon(tc,SUMMON_TYPE_ADVANCE,tp,tp,true,false,POS_FACEUP)~=0 then
+			tc:CompleteProcedure()
+			-- Kích hoạt event thông báo đây được tính như một Normal Summon thành công
+			Duel.RaiseEvent(tc,EVENT_SUMMON_SUCCESS,e,REASON_EFFECT,tp,tp,Duel.GetCurrentChain())
 		end
 	end
 end
