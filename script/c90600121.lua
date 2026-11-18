@@ -19,7 +19,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- ② Quick Effect: Tribute card này để Special Summon 1 Divine-Beast từ tay, Deck hoặc GY (được tính là Normal Summon)
+	-- ② Quick Effect: Tribute card này để Special Summon 1 Divine-Beast từ tay, Deck hoặc GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -61,9 +61,9 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Bộ lọc tìm quái Divine-Beast có thể gọi từ tay, Deck hoặc GY
+-- Bộ lọc đã được tối ưu để không bị kẹt điều kiện gọi Thần
 function s.sumfilter(c,e,tp)
-	return c:IsRace(0x400) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
+	return c:IsRace(0x400) and (c:IsLocation(LOCATION_HAND) or c:IsAbleToSpecialSummon())
 end
 
 function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -78,15 +78,12 @@ end
 
 function s.sumop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	-- Tribute (Release) card này làm cost để kích hoạt
 	if c:IsRelateToEffect(e) and Duel.Release(c, REASON_EFFECT) > 0 then
 		if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		-- Chọn 1 Thần từ Tay, Deck hoặc GY
 		local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.sumfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,tp)
 		local tc=g:GetFirst()
 		if tc then
-			-- Special Summon và treat như dạng triệu hồi tiến cống (Advance/Normal Summon) thành công
 			if Duel.SpecialSummon(tc,SUMMON_TYPE_ADVANCE,tp,tp,true,false,POS_FACEUP)~=0 then
 				tc:CompleteProcedure()
 				Duel.RaiseEvent(tc,EVENT_SUMMON_SUCCESS,e,REASON_EFFECT,tp,tp,Duel.GetCurrentChain())
