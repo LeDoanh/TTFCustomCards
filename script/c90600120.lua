@@ -41,7 +41,7 @@ end
 s.listed_names={10000020,10000022,90600112}
 s.listed_series={SET_CRIMSON}
 
--- Hàm lọc chuẩn toàn cục nhận đầy đủ 3 tham số (c, e, tp)
+-- Bộ lọc dùng riêng cho bước check target (chk==0)
 function s.filter(c,e,tp)
 	return c:IsCode(10000020,10000022,90600112) 
 		and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
@@ -54,11 +54,16 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	end
 end
 
+-- Bộ lọc chuyên biệt cho SelectMatchingCard: chỉ nhận 1 tham số c để tránh tuyệt đối lỗi lệch Parameter 3
+function s.sel_filter(c)
+	return c:IsCode(10000020,10000022,90600112)
+end
+
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if not e:GetHandler():IsRelateToEffect(e) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
-	-- Truyền đầy đủ (tp, s.filter, tp, LOC..., 0, 1, 1, nil, e, tp) để engine cấp phát đủ con trỏ tham số
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,tp)
+	-- Sử dụng aux.NecroValleyFilter kết hợp sel_filter an toàn tuyệt đối
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.sel_filter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
 	local tc=g:GetFirst()
 	if tc then
 		local b1=not tc:IsForbidden() and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
