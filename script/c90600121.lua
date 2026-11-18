@@ -7,7 +7,10 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,s.matfilter,1,1)
 
-	-- ① Nếu được Link Summon: Add bài từ Deck lên tay
+	-- Bạn chỉ có thể Link Summon "Crimson Herald - Sky Conduit" một lần mỗi lượt.
+	c:SetSPSummonOnce(id)
+
+	-- ① Nếu lá bài này được Link Summon: Thêm 1 Field Spell hoặc Continuous Spell đề cập "Slifer the Sky Dragon" hoặc "Divine-Beast" từ Deck lên tay
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -19,7 +22,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- ② Quick Effect: Tribute card này để Special Summon 1 Divine-Beast từ tay, Deck hoặc GY
+	-- ② (Quick Effect): Bạn có thể Hiến tế (Tribute) lá bài này; ngay sau khi hiệu ứng này giải quyết, Triệu hồi Đặc biệt 1 quái thú Thần (Divine-Beast) từ tay, Deck hoặc Mộ của bạn (bạn có thể coi đây là một Triệu hồi Thường).
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -27,14 +30,16 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-	e2:SetTarget(s.sumtg)
-	e2:SetOperation(s.sumop)
+	e2:SetCost(s.spcost)
+	e2:SetTarget(s.sptg)
+	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 end
 
-s.listed_names={10000020, 10000022, 90600112}
+s.listed_names={10000020} -- ID của Slifer the Sky Dragon
 s.listed_series={SET_CRIMSON}
 
+-- Nguyên liệu Link: 1 quái thú FIRE hoặc Dragon từ Level 4 trở xuống
 function s.matfilter(c,lc,sumtype,tp)
 	return c:IsLevelBelow(4) and (c:IsAttribute(ATTRIBUTE_FIRE) or c:IsRace(RACE_DRAGON))
 end
@@ -43,8 +48,11 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
 
+-- Bộ lọc tìm Field Spell hoặc Continuous Spell đề cập "Slifer the Sky Dragon" (ID 10000020) hoặc "Divine-Beast" (Race 0x400)
 function s.thfilter(c)
-	return (c:IsCode(10000020, 10000022, 90600112) or c:ListsCode(10000020) or c:ListsCode(10000022) or c:ListsCode(90600112) or c:IsSetCard(SET_CRIMSON)) and c:IsAbleToHand()
+	return (c:IsType(TYPE_FIELD) or c:IsType(TYPE_CONTINUOUS)) 
+		and (c:ListsCode(10000020) or c:ListsCode(10000022) or c:ListsCode(90600112) or c:ListsCode(10000000)) 
+		and c:IsAbleToHand()
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -61,34 +69,35 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Bộ lọc tìm quái Thần (Divine-Beast)
-function s.sumfilter(c)
-	return c:IsRace(0x400)
+-- Bộ lọc tìm quái thú Thần (Divine-Beast / Race 0x400) để gọi từ Tay, Deck hoặc GY
+function s.spfilter(c,e,tp)
+	return c:IsRace(0x400) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
 end
 
-function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
+	if chk==0 then return c:IsReleasable() end
+	Duel.Release(c,REASON_COST+REASON_RELEASE)
+end
+
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then 
-		-- Chỉ cần lá này có thể release và có ít nhất 1 quái Thần bất kỳ trong Tay, Deck hoặc GY là nút sẽ sáng ngay lập tức
-		return c:IsReleasable() 
-			and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.sumfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil) 
+		return Duel.GetLocationCount(tp,LOCATION_MZONE)>-1 
+			and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,e,tp) 
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE)
 end
 
-function s.sumop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	-- Tiến hành Tribute (Release) chính nó làm điều kiện
-	if c:IsRelateToEffect(e) and Duel.Release(c, REASON_EFFECT) > 0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.sumfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
-		local tc=g:GetFirst()
-		if tc then
-			-- Triệu hồi đặc biệt và đánh dấu tính như một Advance/Normal Summon thành công
-			if Duel.SpecialSummon(tc,SUMMON_TYPE_ADVANCE,tp,tp,true,false,POS_FACEUP)~=0 then
-				tc:CompleteProcedure()
-				Duel.RaiseEvent(tc,EVENT_SUMMON_SUCCESS,e,REASON_EFFECT,tp,tp,Duel.GetCurrentChain())
-			end
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.spfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,tp)
+	local tc=g:GetFirst()
+	if tc then
+		-- Triệu hồi đặc biệt và đánh dấu được tính như một Normal/Advance Summon thành công
+		if Duel.SpecialSummon(tc,SUMMON_TYPE_ADVANCE,tp,tp,true,false,POS_FACEUP)~=0 then
+			tc:CompleteProcedure()
+			Duel.RaiseEvent(tc,EVENT_SUMMON_SUCCESS,e,REASON_EFFECT,tp,tp,Duel.GetCurrentChain())
 		end
 	end
 end
