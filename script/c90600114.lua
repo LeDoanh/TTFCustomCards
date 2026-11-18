@@ -55,7 +55,7 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.tdfilter(c)
-	return (c:IsRace(0x400) or c:IsRace(RACE_DRAGON)) and c:IsAbleToDeck()
+	return (c:IsRace(RACE_DIVINE) or c:IsRace(RACE_DRAGON)) and c:IsAbleToDeck()
 end
 
 function s.thfilter(c)

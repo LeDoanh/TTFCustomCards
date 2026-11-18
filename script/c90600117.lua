@@ -72,13 +72,13 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local ct=Duel.GetMatchingGroupCount(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,nil)
+	local ct=Duel.GetMatchingGroupCount(function(c) return c:IsFaceup() and c:IsRace(RACE_DIVINE) end,tp,LOCATION_MZONE,0,nil)
 	if chk==0 then return ct>0 and Duel.IsPlayerCanDraw(tp,ct) end
 	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,ct)
 end
 
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local ct=Duel.GetMatchingGroupCount(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,nil)
+	local ct=Duel.GetMatchingGroupCount(function(c) return c:IsFaceup() and c:IsRace(RACE_DIVINE) end,tp,LOCATION_MZONE,0,nil)
 	if ct>0 then
 		Duel.Draw(tp,ct,REASON_EFFECT)
 	end

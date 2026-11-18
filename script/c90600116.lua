@@ -46,7 +46,7 @@ s.listed_series={SET_CRIMSON}
 
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0
-		or Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,1,nil)
+		or Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsRace(RACE_DIVINE) end,tp,LOCATION_MZONE,0,1,nil)
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)

@@ -83,12 +83,12 @@ function s.cfilter(c,tp)
 end
 
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsRace(0x400) end,tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsRace(RACE_DIVINE) end,tp,LOCATION_MZONE,0,1,nil)
 		and eg:IsExists(s.cfilter,1,nil,tp)
 end
 
 function s.firedivinefilter(c)
-	return c:IsFaceup() and c:IsRace(0x400) and c:IsAttribute(ATTRIBUTE_FIRE)
+	return c:IsFaceup() and c:IsRace(RACE_DIVINE) and c:IsAttribute(ATTRIBUTE_FIRE)
 end
 
 function s.postg(e,tp,eg,ep,ev,re,r,rp,chk)

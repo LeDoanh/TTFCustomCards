@@ -30,7 +30,7 @@ s.listed_names={10000020, 10000022, 90600112}
 s.listed_series={SET_CRIMSON}
 
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsRace(0x400)
+	return c:IsFaceup() and c:IsRace(RACE_DIVINE)
 end
 
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
