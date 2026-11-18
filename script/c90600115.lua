@@ -112,8 +112,8 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 		local b2=tc:IsAbleToGrave()
 		local op=0
 		if b1 and b2 then
-			-- Sử dụng text thuần túy thay vì Stringid để tránh tuyệt đối lỗi nil parameter 3
-			op=Duel.SelectOption(tp,{tc:IsAbleToHand(),"Add to hand"},{tc:IsAbleToGrave(),"Send to GY"})
+			-- Sử dụng 2 Stringid an toàn (hoặc dùng hàm aux.Stringid chuẩn ID) thay vì truyền bảng dữ liệu gây lỗi nil
+			op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
 		elseif b1 then
 			op=0
 		else
