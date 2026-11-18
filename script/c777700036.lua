@@ -25,18 +25,17 @@ function s.initial_effect(c)
 	e1:SetOperation(s.rmop)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng 2 (Quick Effect - Trong lượt đối thủ): Trả lá bài này về Extra Deck (Cost)
-	-- -> Triệu hồi Đặc biệt 1 Tuner "Gensokyo" và 1 non-Tuner "Gensokyo" từ tay/Deck/Mộ/trục xuất
+	-- Hiệu ứng 2 (Quick Effect - Trong lượt đối thủ): Trả lá bài này về Extra Deck,
+	-- và nếu làm được, Triệu hồi Đặc biệt 1 Tuner "Gensokyo" và 1 non-Tuner "Gensokyo" từ Mộ/Trục xuất
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e2:SetCategory(CATEGORY_TOEXTRA+CATEGORY_SPECIAL_SUMMON)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END+TIMING_BATTLE_START)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.spcon)
-	e2:SetCost(s.spcost)
 	e2:SetTarget(s.sptg)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
@@ -81,16 +80,10 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- 2. LOGIC COST TRẢ VỀ EXTRA DECK -> TRIỆU HỒI 1 TUNER & 1 NON-TUNER "GENSOKYO"
+-- 2. LOGIC TRẢ VỀ EXTRA DECK -> TRIỆU HỒI 1 TUNER & 1 NON-TUNER TỪ MỘ / TRỤC XUẤT
 --------------------------------------------------------------------------------
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()==1-tp
-end
-
-function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToExtraAsCost() end
-	Duel.SendtoDeck(c,nil,SEQ_DECKSHUFFLE,REASON_COST)
 end
 
 function s.tunfilter(c,e,tp)
@@ -107,19 +100,23 @@ end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
-	local loc=LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED
+	local loc=LOCATION_GRAVE+LOCATION_REMOVED
 	if chk==0 then
-		return Duel.GetMZoneCount(tp,c)>=2
+		return c:IsAbleToExtra()
+			and Duel.GetMZoneCount(tp,c)>=2
 			and not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
 			and Duel.IsExistingMatchingCard(s.tunfilter,tp,loc,0,1,nil,e,tp)
 			and Duel.IsExistingMatchingCard(s.nontunfilter,tp,loc,0,1,nil,e,tp)
 	end
+	Duel.SetOperationInfo(0,CATEGORY_TOEXTRA,c,1,0,0)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,loc)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if not c:IsRelateToEffect(e) or Duel.SendtoDeck(c,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)==0 or not c:IsLocation(LOCATION_EXTRA) then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 or Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then return end
-	local loc=LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED
+	local loc=LOCATION_GRAVE+LOCATION_REMOVED
 	local g1=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.tunfilter),tp,loc,0,nil,e,tp)
 	local g2=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.nontunfilter),tp,loc,0,nil,e,tp)
 	if #g1>0 and #g2>0 then

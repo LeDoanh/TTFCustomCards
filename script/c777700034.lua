@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e1)
 
 	-- Hiệu ứng 2 (Quick Effect - Trong lượt đối thủ): Trả lá bài này về Extra Deck,
-	-- sau đó Triệu hồi Đặc biệt 1 Tuner "Gensokyo" và 1 non-Tuner "Gensokyo" từ tay/Deck/Mộ/trục xuất
+	-- và nếu làm được, Triệu hồi Đặc biệt 1 Tuner "Gensokyo" và 1 non-Tuner "Gensokyo" từ Mộ/Trục xuất
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOEXTRA+CATEGORY_SPECIAL_SUMMON)
@@ -97,7 +97,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- 2. LOGIC TRẢ VỀ EXTRA DECK -> TRIỆU HỒI 1 TUNER & 1 NON-TUNER "GENSOKYO"
+-- 2. LOGIC TRẢ VỀ EXTRA DECK -> TRIỆU HỒI 1 TUNER & 1 NON-TUNER TỪ MỘ / TRỤC XUẤT
 --------------------------------------------------------------------------------
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()==1-tp
@@ -117,7 +117,7 @@ end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
-	local loc=LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED
+	local loc=LOCATION_GRAVE+LOCATION_REMOVED
 	if chk==0 then
 		return c:IsAbleToExtra()
 			and Duel.GetMZoneCount(tp,c)>=2
@@ -133,7 +133,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) or Duel.SendtoDeck(c,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)==0 or not c:IsLocation(LOCATION_EXTRA) then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 or Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then return end
-	local loc=LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED
+	local loc=LOCATION_GRAVE+LOCATION_REMOVED
 	local g1=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.tunfilter),tp,loc,0,nil,e,tp)
 	local g2=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.nontunfilter),tp,loc,0,nil,e,tp)
 	if #g1>0 and #g2>0 then
