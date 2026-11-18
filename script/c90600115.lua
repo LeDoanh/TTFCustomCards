@@ -69,9 +69,10 @@ function s.repfilter(c,tp)
 end
 
 function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
 	if chk==0 then return eg:IsExists(s.repfilter,1,nil,tp)
 		and Duel.IsExistingMatchingCard(Card.IsAbleToGrave,tp,LOCATION_HAND,0,1,nil) end
-	if Duel.SelectEffectYesNo(tp,e:GetHandler(),aux.Stringid(id,2)) then
+	if Duel.SelectEffectYesNo(tp,c,aux.Stringid(id,2)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 		local g=Duel.SelectMatchingCard(tp,Card.IsAbleToGrave,tp,LOCATION_HAND,0,1,1,nil)
 		e:SetLabelObject(g:GetFirst())
