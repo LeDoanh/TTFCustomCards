@@ -41,24 +41,23 @@ end
 s.listed_names={10000020,10000022,90600112}
 s.listed_series={SET_CRIMSON}
 
+-- Tách hàm filter ra bên ngoài để tránh hoàn toàn lỗi truyền lambda function gây lệch tham số
+function s.filter(c,e,tp)
+	return c:IsCode(10000020,10000022,90600112) 
+		and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
+		and (not c:IsLocation(LOCATION_GRAVE) or not Duel.IsPlayerAffectedByEffect(tp,59822133))
+end
+
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then 
-		return Duel.IsExistingMatchingCard(function(c)
-			return c:IsCode(10000020,10000022,90600112) 
-				and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
-				and (not c:IsLocation(LOCATION_GRAVE) or not Duel.IsPlayerAffectedByEffect(tp,59822133))
-		end,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil) 
+		return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,e,tp) 
 	end
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if not e:GetHandler():IsRelateToEffect(e) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
-	local g=Duel.SelectMatchingCard(tp,function(c)
-		return c:IsCode(10000020,10000022,90600112) 
-			and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
-			and (not c:IsLocation(LOCATION_GRAVE) or not Duel.IsPlayerAffectedByEffect(tp,59822133))
-	end,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,tp)
 	local tc=g:GetFirst()
 	if tc then
 		local b1=not tc:IsForbidden() and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
