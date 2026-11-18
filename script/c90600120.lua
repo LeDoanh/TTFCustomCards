@@ -41,7 +41,7 @@ end
 s.listed_names={10000020,10000022,90600112}
 s.listed_series={SET_CRIMSON}
 
--- Hàm lọc chỉ nhận tham số c cơ bản để tránh hoàn toàn lỗi lệch tham số Parameter 3
+-- Hàm lọc chuẩn toàn cục nhận đúng tham số (c, e, tp)
 function s.filter(c,e,tp)
 	return c:IsCode(10000020,10000022,90600112) 
 		and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
@@ -57,12 +57,8 @@ end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if not e:GetHandler():IsRelateToEffect(e) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
-	-- Sử dụng hàm ẩn đơn giản kiểm tra mã code trực tiếp, tránh truyền hàm rườm rà gây lỗi con trỏ
-	local g=Duel.SelectMatchingCard(tp,function(c)
-		return c:IsCode(10000020,10000022,90600112) 
-			and (not c:IsForbidden() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
-			and (not c:IsLocation(LOCATION_GRAVE) or not Duel.IsPlayerAffectedByEffect(tp,59822133))
-	end,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
+	-- Sử dụng hoàn toàn hàm s.filter chuẩn, loại bỏ hoàn toàn hàm ẩn gây lỗi
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,e,tp)
 	local tc=g:GetFirst()
 	if tc then
 		local b1=not tc:IsForbidden() and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
