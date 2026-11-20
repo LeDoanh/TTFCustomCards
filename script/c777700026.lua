@@ -82,7 +82,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		Duel.AdjustAll()
 		-- Ép buộc sử dụng chính lá bài này làm nguyên liệu (có thể đóng vai trò Tuner hoặc Non-Tuner)
 		Synchro.CheckAdditional=function(tp,sg,sc) return sg:IsContains(c) end
 		local syng=Duel.GetMatchingGroup(s.synfilter,tp,LOCATION_EXTRA,0,nil)
