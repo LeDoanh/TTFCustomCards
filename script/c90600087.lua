@@ -2,9 +2,9 @@
 -- ID: 90600087
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Điều kiện Link Summon: 2 quái thú, bao gồm 1 "Æthel-Nemesis" hoặc "Sky Striker"
+    -- Điều kiện Link Summon: 2 quái thú, bao gồm ít nhất 1 "Æthel-Nemesis" hoặc "Sky Striker"
     c:EnableReviveLimit()
-    Link.AddProcedure(c, s.matfilter, 1, 1, s.lcheck)
+    Link.AddProcedure(c, s.matfilter, 2, 2, s.lcheck)
     
     -- Hiệu ứng 1: Khi Special Summon -> Banish 1 quái thú Æthel-Nemesis hoặc Sky Striker từ Deck
     local e1=Effect.CreateEffect(c)
@@ -37,15 +37,19 @@ end
 -- Mã Archetype (0x115a: Æthel-Nemesis, 0x115: Sky Striker)
 s.listed_series={0x115a, 0x115}
 
+-- Bộ lọc nguyên liệu từng con: phải thuộc archetype Æthel-Nemesis hoặc Sky Striker
 function s.matfilter(c,lc,sumtype,tp)
     return c:IsSetCard(0x115a,lc,sumtype,tp) or c:IsSetCard(0x115,lc,sumtype,tp)
 end
 
+-- Kiểm tra tổng nhóm nguyên liệu (Ít nhất 1 con phải thuộc archetype)
 function s.lcheck(g,lc,sumtype,tp)
-    return g:GetCount()==2
+    return g:IsExists(s.matfilter,1,nil,lc,sumtype,tp)
 end
 
--- Filter & xử lý Hiệu ứng 1
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 1: BANISH 1 QUÁI THÚ TỪ DECK KHI ĐƯỢC SPECIAL SUMMON
+--------------------------------------------------------------------------------
 function s.rmfilter(c)
     return c:IsMonster() and (c:IsSetCard(0x115a) or c:IsSetCard(0x115)) and c:IsAbleToRemove()
 end
@@ -61,15 +65,17 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Filter & xử lý Hiệu ứng 2
+--------------------------------------------------------------------------------
+-- HIỆU ỨNG 2: BANISH CARD TỪ GY ĐỐI THỦ & TỰ TĂNG COUNT LÀM NGUYÊN LIỆU LINK
+--------------------------------------------------------------------------------
 function s.linkcond(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsMainPhase() and Duel.GetTurnPlayer()~=tp
 end
 function s.linktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsLocation(LOCATION_GY) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
-    if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_GY,1,nil) end
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
+    if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_GRAVE,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_GY,1,1,nil)
+    local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_GRAVE,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
 function s.linkop(e,tp,eg,ep,ev,re,r,rp)
@@ -77,7 +83,7 @@ function s.linkop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 then
         if c:IsRelateToEffect(e) and c:IsFaceup() then
-            -- Cho phép lá bài này làm toàn bộ nguyên liệu Link Summon cho 1 quái thú Æthel-Nemesis trong lượt này
+            -- Cho phép lá bài này dùng một mình nó để thay thế toàn bộ số nguyên liệu Link cần thiết
             local e1=Effect.CreateEffect(c)
             e1:SetType(EFFECT_TYPE_SINGLE)
             e1:SetCode(EFFECT_LINK_MATERIAL_COUNT)
@@ -88,9 +94,13 @@ function s.linkop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
+-- Hàm tính toán số lượng nguyên liệu quy đổi: Cho phép trả về giá trị Link của con quái mục tiêu hoặc tối đa theo yêu cầu
 function s.matval(e,lc)
+    -- Trả về trực tiếp chỉ số Link của quái thú Link chuẩn bị triệu hồi (lc:GetLink()) 
+    -- giúp nó một mình đáp ứng đủ từ Link-3 lên đến Link-8 miễn là quái đích thuộc archetype Æthel-Nemesis.
     if lc:IsSetCard(0x115a) then
         return lc:GetLink()
     end
-    return 0
+    return 1
 end
