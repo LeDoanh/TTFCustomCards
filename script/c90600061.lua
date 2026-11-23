@@ -1,8 +1,10 @@
 -- Sky Striker Airspace - Assembly Area
 -- ID: 90600061
 local s,id=GetID()
+local SET_SKY_STRIKER = 0x115
+
 function s.initial_effect(c)
-	-- Kích hoạt Field Spell: Lấy 1 quái thú "Sky Striker" từ Deck lên tay
+	-- Kích hoạt Field Spell: Lấy 1 quái thú "Sky Striker" từ Deck lên tay (tùy chọn)
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -12,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng continuous: Cho phép kích hoạt Sky Striker Spell ngay cả khi có quái ở Main Monster Zone (Bypass Hook)
+	-- Hiệu ứng: Cho phép kích hoạt Sky Striker Spell kể cả khi có quái thú ở Main Monster Zone
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e2:SetCode(EVENT_ADJUST)
@@ -62,7 +64,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------------------------------
--- HỆ THỐNG HOOK: OVERRIDE LỖI MAIN MONSTER ZONE
+-- HỆ THỐNG HOOK: Override lỗi Main Monster Zone (Chuẩn theo mẫu Sector Omega)
 --------------------------------------------------------------------------------
 if not s.sky_striker_hooked then
 	s.sky_striker_hooked=true
@@ -136,6 +138,7 @@ function s.patch_cfilter()
 		end
 	end
 end
+s.patch_cfilter()
 
 function s.adjustop(e,tp,eg,ep,ev,re,r,rp)
 	s.patch_cfilter()
