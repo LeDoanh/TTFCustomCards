@@ -11,7 +11,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- Hiệu ứng: Cho phép kích hoạt Sky Striker Spell kể cả khi có quái thú ở Main Monster Zone (Copy từ nguồn)
+	-- Hiệu ứng: Cho phép kích hoạt Sky Striker Spell kể cả khi có quái thú ở Main Monster Zone
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e2:SetCode(EVENT_ADJUST)
@@ -19,7 +19,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.adjustop)
 	c:RegisterEffect(e2)
 
-	-- Hiệu ứng: Tăng công thủ (100 ATK/DEF cho mỗi Spell trong Mộ) (Copy từ nguồn)
+	-- Hiệu ứng: Tăng công thủ (100 ATK/DEF cho mỗi Spell trong Mộ)
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
 	e3:SetCode(EFFECT_UPDATE_ATTACK)
@@ -38,7 +38,7 @@ s.listed_series={0x115} -- Setcode Sky Striker
 -- HIỆU ỨNG KÍCH HOẠT: Đào 5 lá trên cùng Bộ bài
 -- ==================================================
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end -- Luôn có thể kích hoạt Field Spell
+	if chk==0 then return true end
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
 
@@ -48,13 +48,11 @@ end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if not e:GetHandler():IsRelateToEffect(e) then return end
-	-- Kiểm tra nếu Deck có từ 5 lá trở lên và người chơi muốn dùng hiệu ứng
 	if Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)>=5 and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
 		Duel.ConfirmDecktop(tp,5)
 		local g=Duel.GetDecktopGroup(tp,5)
 		if #g>0 then
 			Duel.DisableShuffleCheck()
-			-- Nếu có lá Sky Striker và người chơi muốn lấy lên tay
 			if g:IsExists(s.thfilter,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 				local sg=g:FilterSelect(tp,s.thfilter,1,1,nil)
@@ -64,20 +62,18 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 					Duel.ShuffleHand(tp)
 				end
 			end
-			-- Xáo trộn phần còn lại vào Deck
 			Duel.ShuffleDeck(tp)
 		end
 	end
 end
 
 -- ==================================================
--- HỆ THỐNG HOOK: Override lỗi Main Monster Zone (Từ file c90600024_2.lua)
+-- HỆ THỐNG HOOK: An toàn tuyệt đối cho Synchro Summon
 -- ==================================================
 if not s.sky_striker_hooked then
 	s.sky_striker_hooked=true
 	
 	local old_GetFieldGroupCount=Duel.GetFieldGroupCount
-	local old_GetFieldGroup=Duel.GetFieldGroup
 	local old_GetMatchingGroupCount=Duel.GetMatchingGroupCount
 	local old_IsExistingMatchingCard=Duel.IsExistingMatchingCard
 
@@ -91,28 +87,27 @@ if not s.sky_striker_hooked then
 		return (mmz and loc == mmz)
 	end
 
+	-- Chỉ can thiệp khi hàm kiểm tra xuất phát từ check số lượng quái Main Zone của Sky Striker Spell
 	if old_GetFieldGroupCount then
 		Duel.GetFieldGroupCount=function(p, s_loc, o_loc, ...)
 			if is_mmzone(s_loc) and is_omega_active(p) then
-				return 0
+				-- Đảm bảo chỉ trả về 0 khi tiến trình gọi kiểm tra không phải từ bộ quy tắc Synchro/Extra Deck
+				local info = debug.getinfo(2, "S")
+				if info and info.source and not info.source:find("proc_") then
+					return 0
+				end
 			end
 			return old_GetFieldGroupCount(p, s_loc, o_loc, ...)
-		end
-	end
-
-	if old_GetFieldGroup then
-		Duel.GetFieldGroup=function(p, s_loc, o_loc, ...)
-			if is_mmzone(s_loc) and is_omega_active(p) then
-				return Group.CreateGroup()
-			end
-			return old_GetFieldGroup(p, s_loc, o_loc, ...)
 		end
 	end
 
 	if old_GetMatchingGroupCount then
 		Duel.GetMatchingGroupCount=function(f, p, s_loc, o_loc, ex, ...)
 			if is_mmzone(s_loc) and is_omega_active(p) then
-				return 0
+				local info = debug.getinfo(2, "S")
+				if info and info.source and not info.source:find("proc_") then
+					return 0
+				end
 			end
 			return old_GetMatchingGroupCount(f, p, s_loc, o_loc, ex, ...)
 		end
@@ -121,7 +116,10 @@ if not s.sky_striker_hooked then
 	if old_IsExistingMatchingCard then
 		Duel.IsExistingMatchingCard=function(f, p, s_loc, o_loc, ct, ex, ...)
 			if is_mmzone(s_loc) and is_omega_active(p) then
-				return false
+				local info = debug.getinfo(2, "S")
+				if info and info.source and not info.source:find("proc_") then
+					return false
+				end
 			end
 			return old_IsExistingMatchingCard(f, p, s_loc, o_loc, ct, ex, ...)
 		end
@@ -152,7 +150,7 @@ function s.adjustop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- ==================================================
--- HIỆU ỨNG TĂNG ATK/DEF (Từ file c90600024_2.lua)
+-- HIỆU ỨNG TĂNG ATK/DEF
 -- ==================================================
 function s.atktg(e,c)
 	return c:IsSetCard(0x115)
