@@ -20,6 +20,7 @@ SET_CHRYSOS_HEIRS                 = 0xffa
 SET_VEIDOS                        = 0x784
 SET_GENERICUS                     = 0x785
 SET_GENERICUS_MONSTRUM            = 0x785
+SET_AXIOMATH                      = 0x0f60
 -- Custom counter
 COUNTER_MANA                      = 0x177
 COUNTER_CHRYSOS                   = 0x1ffa

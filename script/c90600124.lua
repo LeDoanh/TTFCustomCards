@@ -36,10 +36,12 @@ end
 s.listed_names={89631139}
 s.listed_series={SET_BLUE_EYES}
 
+-- Tuner filter: 1 LIGHT Tuner
 function s.mfilter(c,sc,stype,tp)
 	return c:IsAttribute(ATTRIBUTE_LIGHT,sc,stype,tp) and c:IsType(TYPE_TUNER,sc,stype,tp)
 end
 
+-- Non-tuner filter: 1 "Blue-Eyes" monster
 function s.ntfilter(c,sc,stype,tp)
 	return c:IsSetCard(SET_BLUE_EYES,sc,stype,tp)
 end
@@ -73,9 +75,10 @@ function s.cpop(e,tp,eg,ep,ev,re,r,rp)
 
 	local code=tc:GetOriginalCode()
 	local atk=math.floor(tc:GetBaseAttack()/2)
-	local reset_flag=RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END+RESET_SELF_TURN
+	-- "until end of your NEXT turn": survive opponent's turn then reset at end of your next turn
+	local reset_flag=RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END+RESET_OPPO_TURN
 
-	-- Copy name and effect until end of your next turn
+	-- Copy name until end of your next turn
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
@@ -84,6 +87,7 @@ function s.cpop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetReset(reset_flag,2)
 	c:RegisterEffect(e1)
 
+	-- Copy effects of that monster until end of your next turn
 	c:CopyEffect(code,reset_flag,2)
 
 	-- Gain half original ATK until end of your next turn
@@ -106,8 +110,8 @@ function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
 		return Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,3,nil)
 			and Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil)
 	end
-	local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,nil)
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,3,0,0)
+	-- Use count-based SetOperationInfo (no specific group) to avoid nil param issues
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,0,3,0,0)
 	local dg=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,dg,#dg,0,0)
 end
@@ -117,10 +121,6 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,3,3,nil)
 	if #g<3 then return end
 	if Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 then
-		local og=Duel.GetOperatedGroup()
-		if og:IsExists(Card.IsLocation,1,nil,LOCATION_DECK+LOCATION_EXTRA) then
-			Duel.ShuffleDeck(tp)
-		end
 		local dg=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
 		if #dg>0 then
 			Duel.Destroy(dg,REASON_EFFECT)
