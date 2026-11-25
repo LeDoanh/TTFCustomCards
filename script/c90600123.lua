@@ -112,12 +112,14 @@ end
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
-	local is_synchro=tc:IsOriginalType(TYPE_SYNCHRO)
-	local is_tuner=tc:IsOriginalType(TYPE_TUNER)
+	-- Save original type and level BEFORE shuffling
+	local is_synchro=(tc:GetOriginalType()&TYPE_SYNCHRO)~=0
+	local is_tuner=(tc:GetOriginalType()&TYPE_TUNER)~=0
 	local lv=tc:GetLevel()
 	if Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)==0 then return end
 	local c=e:GetHandler()
 	if is_synchro then
+		-- Negate the effect if tc's effect is on the chain
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e1:SetCode(EVENT_CHAIN_SOLVING)
