@@ -2,8 +2,8 @@
 -- ID: 777700033
 local s,id=GetID()
 
-local SET_GENSOKYO			 = 0xa70
-local SET_GENSOKYO_NETHER	  = 0xd6c
+local SET_GENSOKYO		   = 0xa70
+local SET_GENSOKYO_NETHER	 = 0xd6c
 local SET_PRISMRIVER		   = 0x1d6c -- Sub-setcode đại diện cho từ khóa "Prismriver"
 local CARD_PRISMRIVER_SISTERS  = 777700032 -- Gensokyo Nether - Prismriver Sisters
 
@@ -90,7 +90,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local og=Duel.GetOperatedGroup():Filter(Card.IsLocation,nil,LOCATION_MZONE)
 	if #og==0 then return end
 
-	Duel.AdjustAll()
 	local b1=og:IsExists(Card.HasLevel,1,nil)
 	local b2=Duel.IsExistingMatchingCard(s.scfilter,tp,LOCATION_EXTRA,0,1,nil,og)
 	if not (b1 or b2) then return end
