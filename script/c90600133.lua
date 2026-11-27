@@ -129,4 +129,4 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 			end
 		end
 	end
-end\n
+end

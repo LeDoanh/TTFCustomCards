@@ -104,4 +104,4 @@ function s.linkop(e,tp,eg,ep,ev,re,r,rp)
 		local sg=g:Select(tp,1,1,nil)
 		Duel.LinkSummon(tp,sg:GetFirst(),nil)
 	end
-end\n
+end
