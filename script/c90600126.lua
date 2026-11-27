@@ -1,5 +1,5 @@
 -- Maliss <P> Forget-Me-Not
--- ID: 90600128
+-- ID: 90600126
 local s,id=GetID()
 local SET_MALISS=0x1b9
 
@@ -48,6 +48,10 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
 
+function s.edfilter(c)
+	return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_LINK)
+end
+
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
@@ -62,10 +66,14 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
 		e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
 		e1:SetTargetRange(1,0)
-		e1:SetTarget(function(e,c) return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_LINK) end)
+		e1:SetTarget(s.edfilter)
 		e1:SetReset(RESET_PHASE+PHASE_END)
 		Duel.RegisterEffect(e1,tp)
 	end
+end
+
+function s.thfilter(c)
+	return c:IsSetCard(SET_MALISS) and c:IsSpellTrap() and c:IsAbleToHand()
 end
 
 function s.bansptg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -73,10 +81,7 @@ function s.bansptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,tp,0)
-end
-
-function s.thfilter(c)
-	return c:IsSetCard(SET_MALISS) and c:IsSpellTrap() and c:IsAbleToHand()
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.banspop(e,tp,eg,ep,ev,re,r,rp)

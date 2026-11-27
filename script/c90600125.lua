@@ -92,4 +92,4 @@ function s.attachop(e,tp,eg,ep,ev,re,r,rp)
 			c:RegisterEffect(e1)
 		end
 	end
-end\n
+end
